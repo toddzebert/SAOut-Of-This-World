@@ -23,6 +23,57 @@
 
 #include <ws2812b_dma_spi_led_driver.h>
 
+volatile uint8_t timer_tick = 0;
+
+// @debug testing.
+struct WsEffect comet = {
+    "comet",
+    "Comet",
+    250,
+    250,
+    250,
+    (uint32_t) 0xC00000,
+    1,
+    1,
+    1,
+    1,   
+};
+
+/*
+struct WsSections ws_section_eyes = {
+    "eyes",
+    WS_EYES_LED_START,
+    WS_EYES_LED_END,
+    WS_EYES_LED_COUNT,
+};
+*/
+
+/*
+struct WsSections ws_section_upper_trim = {
+    "upper_trim",
+    WS_UPPER_TRIM_START,
+    WS_UPPER_TRIM_END,
+    WS_UPPER_TRIM_COUNT
+};
+*/
+
+/*
+struct WsSections ws_section_lower_trim = {
+    "lower_trim",
+    WS_LOWER_TRIM_START,
+    WS_LOWER_TRIM_END,
+    WS_LOWER_TRIM_COUNT,
+};
+*/
+
+/* @debug not working, but not part of this branch's goal.
+struct WsSections ws_section_lower_trim;
+ws_section_lower_trim.machine_name = 'lower_trim';
+*/
+
+
+#define COMET_DEFAULT_TIMER_BASE 250 // 1/4s
+uint16_t comet_timer_base = COMET_DEFAULT_TIMER_BASE;
 #define COMET_LENGTH 3
 /* red comet
 const static uint32_t comet_colors[3] = {
@@ -37,7 +88,9 @@ const static uint32_t comet_colors[3] = {
 
 static int8_t comet_position = MIN_LED;
 static int8_t comet_direction = 1; // or -1
+volatile uint16_t comet_timer = COMET_DEFAULT_TIMER_BASE;
 static volatile uint8_t comet_dirty = 1; // or 0
+
 
 // Adapated from https://github.com/cnlohr/ch32v003fun/blob/master/examples/adc_fixed_fs/adc_fixed_fs.c .
 // TIM1C1 uses PD2.
@@ -47,10 +100,10 @@ void init_timer() {
     // @todo why both TIM1 and TIM2?
     TIM1->CTLR1 |= TIM_CounterMode_Up | TIM_CKD_DIV1;
     TIM1->CTLR2 = TIM_MMS_1;
-    // ATRLR 1000-1 and PSC 48000-1 should result in a 1s timer.
+    
     // @debug now at 1/4s
-    TIM1->ATRLR = 250-1; // > Auto-reload value register; the counter stops when ATRLR is empty.
-    TIM1->PSC = 48000-1; // > Counting clock prescaler.
+    TIM1->ATRLR = SOTW_ATRLR-1; // > Auto-reload value register; the counter stops when ATRLR is empty.
+    TIM1->PSC = SOTW_PSC-1; // > Counting clock prescaler.
     TIM1->RPTCR = 0; // > Recurring count value register.
     TIM1->SWEVGR = TIM_PSCReloadMode_Immediate; // > Event generation register.
 
@@ -63,7 +116,8 @@ void init_timer() {
 // Both adapted from https://github.com/cnlohr/ch32v003fun/blob/master/examples/adc_fixed_fs/adc_fixed_fs.c .
 void TIM1_UP_IRQHandler(void) __attribute__((interrupt));
 void TIM1_UP_IRQHandler() {
-    comet_dirty = 1;
+    timer_tick = 1;
+    // comet_dirty = 1;
 
     // @todo what does this do? from source code.
     if(TIM1->INTFR & TIM_FLAG_Update) {
@@ -90,7 +144,9 @@ uint32_t WS2812BLEDCallback( int ledno )
     return comet_colors[position_within_comet];
 }
 
-void cometDirtyHandler() {
+void cometUpdateHandler() {
+    comet_timer = comet_timer_base;
+
     comet_position += comet_direction;
 
     if( comet_position < MIN_LED ) {
@@ -116,11 +172,21 @@ int main()
 
     init_timer();
 
+    // Let things settle.
+    Delay_Ms( 100 );
+
     while(1)
     {
         // @todo button(s) occasional polling and debounce here.
+        if ( timer_tick ) {
+            timer_tick = 0;
 
-        if ( comet_dirty ) cometDirtyHandler(); 
+            // if ( comet_dirty ) cometDirtyHandler(); 
+            comet_timer--;
+
+            if( comet_timer == 0 ) cometUpdateHandler();
+        }
+        
 
     }
 
