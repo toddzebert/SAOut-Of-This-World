@@ -8,12 +8,13 @@
     **For the CH32V003 this means output will be on PORTC Pin 6**
 
     From i2c_slave.h:
-        I2C1 SDA and SCL [PC1 and PC2].
+        SDA and SCL [PC1 and PC2].
     
     Programming:
         PD1 is SWIO.
     
-    See below for interrupt pin.
+    Timer interrupt:
+        TIM1C1 uses PD2.
 
     Button
         PC3 - TBD
@@ -29,8 +30,8 @@
 #include <stdio.h>
 
 #include <ch32v003fun.h>
-#include <i2c_slave.h>
 #include <ch32v003_GPIO_branchless.h>
+#include <i2c_slave.h>
 
 #define LEDS 16
 #define MIN_LED 0
@@ -90,6 +91,10 @@ struct WsSections ws_section_lower_trim;
 ws_section_lower_trim.machine_name = 'lower_trim';
 */
 
+// I2C.
+// @note Can be extended to 256 registers as needed, and presets can be set in the array.
+volatile uint8_t i2c_registers[32] = {0x00};
+#define I2C_ADDRESS 0x09
 
 // Button.
 // PC3.
@@ -111,6 +116,7 @@ static uint32_t comet_colors_0[3] = {
 };
 
 // Blue comet.
+// @todo Blue compensation (for low voltage).
 static uint32_t comet_colors_1[3] = {
     0x0000c0, 0x000030, 0x000010,
 };
@@ -195,11 +201,17 @@ void cometUpdateHandler() {
 
 
 void init_gpio() {
+    // funGpioInitAll(); // @todo from i2c code... for using fun* functions.
+
     GPIO_port_enable(GPIO_port_C);
-    // PC3 for button.
-    // @note changed to pullDown.
+
+    // PC3 for button1.
+    // @note changed to pullDown.    
     GPIO_pinMode(GPIOv_from_PORT_PIN(GPIO_port_C, 3), GPIO_pinMode_I_pullDown, GPIO_Speed_In);
 
+    // i2c_slave.
+    funPinMode(PC1, GPIO_CFGLR_OUT_10Mhz_AF_OD); // SDA
+    funPinMode(PC2, GPIO_CFGLR_OUT_10Mhz_AF_OD); // SCL
     /* @debug will use lib instead
     RCC->APB2PCENR |= RCC_APB2Periph_GPIOC;
 
@@ -225,6 +237,14 @@ void init_gpio() {
     */
 }
 
+void onI2cWrite(uint8_t reg, uint8_t length) {
+    // @todo
+}
+
+void onI2cRead(uint8_t reg) {
+    // @todo
+}
+
 int main()
 {
 	SystemInit();
@@ -241,6 +261,10 @@ int main()
 
     // Let things settle.
     Delay_Ms( 100 );
+
+    // Address, registers, registers length, onWrite callback, onRead callback, read only.
+    // > The I2C1 peripheral can also listen on a secondary address. [see Readme]
+    SetupI2CSlave(I2C_ADDRESS, i2c_registers, sizeof(i2c_registers), onI2cWrite, onI2cRead, false);
 
     printf("In Main before while()\r\n"); // @debug
 
