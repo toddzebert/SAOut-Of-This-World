@@ -2,7 +2,7 @@
 #define _FUNCONFIG_H
 
 // board definition file will already take care of this
-//#define CH32V003           1
+#define CH32V003           1
 
 // #define FUNCONF_USE_PLL 1               // Use built-in 2x PLL 
 // #define FUNCONF_USE_HSI 1               // Use HSI Internal Oscillator
@@ -12,7 +12,9 @@
 // #define FUNCONF_HSE_BYPASS 0            // Use HSE Bypass feature (for oscillator input)
 // #define FUNCONF_USE_CLK_SEC	1			// Use clock security system, enabled by default
 // #define FUNCONF_USE_DEBUGPRINTF 1
-// #define FUNCONF_USE_UARTPRINTF  0
+// #define FUNCONF_DEBUGPRINTF_TIMEOUT (1<<31) // Wait for a very very long time.
+#define FUNCONF_USE_UARTPRINTF  1
+#define FUNCONF_UART_PRINTF_BAUD 9600
 // #define FUNCONF_NULL_PRINTF 0           // Have printf but direct it "nowhere"
 // #define FUNCONF_SYSTICK_USE_HCLK 0      // Should systick be at 48 MHz or 6MHz?
 // #define FUNCONF_TINYVECTOR 0            // If enabled, Does not allow normal interrupts.
