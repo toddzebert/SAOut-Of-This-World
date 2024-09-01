@@ -41,6 +41,15 @@
 #define WS2812DMA_IMPLEMENTATION
 #define WSRBG
 
+/* @todo registers:
+    0-15: reserverd, 0 is version # - not writtable
+    16-31: reserved for gloabal settings
+    32-47: stars
+    48-63: eyes
+    64-95: upper trim
+    96-127: lower trim
+*/
+
 #include <ws2812b_dma_spi_led_driver.h>
 
 volatile uint8_t timer_tick = 0;
@@ -120,6 +129,9 @@ static uint32_t comet_colors_0[3] = {
 static uint32_t comet_colors_1[3] = {
     0x0000c0, 0x000030, 0x000010,
 };
+
+// @todo take gamma into account
+// https://hackaday.com/2016/08/23/rgb-leds-how-to-master-gamma-and-hue-for-perfect-brightness/ .
 
 // This complexity because of compilier directives; usaged also changes, ex:
 // (*comet_colors_current)[position_within_comet]; or comet_colors_current = &comet_colors_1;
