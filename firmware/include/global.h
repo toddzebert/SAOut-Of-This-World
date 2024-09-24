@@ -2,18 +2,10 @@
 #define GLOBAL_H_
 
 #include <stdio.h>
-// #include <effects/blink.h>
 
-// Things. @todo delete?
-/*
-#define THING_STARS 1
-#define THING_EYES 2
-#define THING_UPPER_TRIM 3
-#define THING_LOWER_TRIM 4
-*/
+// #pragma message ("In global.h") // @debug
 
 // Things.
-// /* @debug
 typedef enum {
     THING_STARS = 0,
     THING_EYES = 1,
@@ -22,28 +14,6 @@ typedef enum {
 } Things_t;
 
 extern Things_t thing;
-// */
-
-// #define GLOBAL_DEBUG 1
-
-// WS Things start, end, count.
-#define WS_EYES_LED_START 0
-#define WS_EYES_LED_END 1
-#define WS_EYES_LED_COUNT (WS_EYES_LED_END - WS_EYES_LED_START + 1)
-
-#define WS_UPPER_TRIM_START 3 // @debug leaving one blank
-#define WS_UPPER_TRIM_END 7
-#define WS_UPPER_TRIM_COUNT (WS_UPPER_TRIM_END - WS_UPPER_TRIM_START + 1)
-
-#define WS_LOWER_TRIM_START 9 // @debug leaving one blank
-#define WS_LOWER_TRIM_END 16 // @debug short by one, limitation of test ring.
-#define WS_LOWER_TRIM_COUNT (WS_LOWER_TRIM_END - WS_LOWER_TRIM_START + 1)
-
-// @todo consider making RGB(4th byte?) struct here to make it easier to color? \
-// @todo this will be part of registry[].
-extern uint32_t ws_leds[16];
-
-// @todo include regular LEDs in same array?
 
 // Effects.
 #define EFFECT_UNDEFINED 0
@@ -52,28 +22,42 @@ extern uint32_t ws_leds[16];
 #define EFFECT_BLINK 3
 // @todo more...
 
-
+// Registry.
 #define REG_STARS_START 32
 #define REG_STARS_END 47
 #define REG_STARS_COUNT (REG_STARS_END - REG_STARS_START + 1)
+#define REG_STARS_LED_START 43
+
 #define REG_EYES_START 48
-#define REG_EYES_END 63
+#define REG_EYES_END 66
 #define REG_EYES_COUNT (REG_EYES_END - REG_EYES_START + 1)
-#define REG_UPPER_TRIM_START 64
+#define REG_EYES_LED_START 61
+#define REG_EYES_LEFT_LED_START 61
+#define REG_EYES_RIGHT_LED_START 64
+
+#define REG_UPPER_TRIM_START 67
 #define REG_UPPER_TRIM_END 95
 #define REG_UPPER_TRIM_COUNT (REG_UPPER_TRIM_END - REG_UPPER_TRIM_START + 1)
-#define REG_LOWER_TRIM_START 64
-#define REG_LOWER_TRIM_END 95
+#define REG_UPPER_TRIM_LED_START 83
+
+#define REG_LOWER_TRIM_START 96
+#define REG_LOWER_TRIM_END 139
 #define REG_LOWER_TRIM_COUNT (REG_LOWER_TRIM_END - REG_LOWER_TRIM_START + 1)
+#define REG_LOWER_TRIM_LED_START 115
 
-// i2c.
+// i2c and source of WS callback data.
 // @note Can be extended to 256 registers as needed, and presets can be set in the array.
-extern volatile uint8_t registry[128];
+#define REG_COUNT 140
+extern volatile uint8_t registry[REG_COUNT];
 
-// void *arrayCopy(volatile void *dest, size_t dest_offset, void *src, size_t src_offset, size_t dest_len);
-void regCopy(volatile uint8_t *dest, size_t dest_offset, uint8_t *src, size_t src_offset, size_t dest_len);
+void arrayToRegCopy(volatile uint8_t *dest, size_t dest_offset, uint8_t *src, size_t src_offset, size_t dest_len);
 
-// #include "effects.h"
-// #include "things.h"
+void regToRegCopy(volatile uint8_t *dest, size_t dest_offset, volatile uint8_t *src, size_t src_offset, size_t dest_len);
+
+void printNon0Reg(volatile uint8_t *reg);
+
+void printBin(uint8_t c, int newline);
+
+void printBinByRef(void *pnt0, int newline);
 
 #endif /* GLOBAL_H_ */

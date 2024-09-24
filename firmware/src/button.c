@@ -7,7 +7,7 @@ uint16_t button1_timer;
 uint8_t button1_state;
 
 void button1Init ( void ) {
-    printf("In button1Init\r\n"); // @debug
+    // printf("In button1Init\r\n"); // @debug
     
     GPIO_port_enable(GPIO_port_C);
 
@@ -49,7 +49,7 @@ void button1Handler ( void ) {
             printf("button1_state &1 TRUE : %d\r\n", button1_state); // @debug
             button1_state = 0;
 
-            /* @todo
+            /* @todo move.
             switch (comet_selection)    {
                 case 0: {
                     comet_colors_current = &comet_colors_1;
