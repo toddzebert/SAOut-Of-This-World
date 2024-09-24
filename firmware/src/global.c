@@ -2,23 +2,16 @@
 
 volatile uint8_t registry[140] = {0};
 
-uint32_t ws_leds[16] = {0};
+uint32_t ws_leds[16] = {0}; // @todo remove.
 
-// @todo move this!
-void effect_raw(void)
-{
-    printf("In effect_raw\r\n");
-    // @todo
-}
+uint16_t thing_timer[THING_COUNT];
 
-
-// @todo problem below!! ******
-// > src\global.c:17:15: warning: initialization discards 'volatile' qualifier from pointer target type [-Wdiscarded-qualifiers]
-// > char *d = dest;
-// passing argument 3 of 'regCopy' discards 'volatile' qualifier from pointer target type [-Wdiscarded-qualifiers]
-
-// @note "void *" is a pointer to data of unknown type, and cannot be dereferenced.
-
+const uint8_t reg_thing_start[THING_COUNT] = {
+    REG_STARS_START,
+    REG_EYES_START,
+    REG_UPPER_TRIM_START,
+    REG_LOWER_TRIM_START
+};
 
 /**
  * @brief Copy from array to registry.

@@ -8,6 +8,7 @@ enum Blink_mode {
 
 
 // Offsets from each "thing" base in the registry.
+// @todo these only apply to Eyes!
 #define Blink_Effect_offset 0
 #define Blink_Timer_offset 1 // 2 bytes
 #define Blink_LEDs_offset 3
