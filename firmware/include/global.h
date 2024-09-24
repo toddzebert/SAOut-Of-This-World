@@ -19,7 +19,7 @@ extern Things_t thing;
 #define EFFECT_UNDEFINED 0
 #define EFFECT_RAW 1
 #define EFFECT_COMET 2
-#define EFFECT_BLINK 3
+#define EFFECT_WS_BLINK 3
 // @todo more...
 
 // Registry.

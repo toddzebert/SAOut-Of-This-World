@@ -5,7 +5,7 @@
 
 #include "../global.h" // Need for Things_t, etc.
 
-void effect_ws_blink(Things_t thing, int flag);
+int effect_ws_blink(Things_t thing, int flag);
 
 extern uint16_t eyes_timer;
 

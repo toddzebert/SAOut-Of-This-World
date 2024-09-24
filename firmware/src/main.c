@@ -301,7 +301,7 @@ int main()
     button1Init();
 
     // @todo All the things inits should be done more dymamicly.
-    eyesInit();
+    eyesHandler(1);
 
     // WS2812 init and initial "start" to render. Must go after all "things" inits.
     WS2812BDMAInit();
@@ -332,8 +332,7 @@ int main()
             eyes_timer--;
             if ( eyes_timer == 0 )
             {
-                eyesHandler();
-                ws_dirty = 1;
+                ws_dirty = eyesHandler(0) | ws_dirty;
             }
 
             // @todo have to handle GPIO stars diff from WS things!
@@ -341,6 +340,7 @@ int main()
             // This should always be at the end, after all Things handlers.
             if (ws_dirty) {
                 ws_dirty = 0;
+                // printf("WS dirty\r\n"); // @debug
                 WS2812BDMAStart(LEDS);
             }
         }

@@ -9,11 +9,9 @@
 
 #define EYES_TIMER_BASE 5
 
-extern uint16_t eyes_timer; // @todo is this needed?
-extern uint8_t eyes_state; // @todo is this needed?
+extern uint16_t eyes_timer;
+extern uint8_t eyes_effect;
 
-void eyesInit(void);
-
-void eyesHandler(void);
+int eyesHandler(int flag);
 
 #endif /* EYES_H_ */

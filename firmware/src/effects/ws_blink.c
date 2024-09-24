@@ -24,7 +24,7 @@ enum Blink_mode {
 #define Blink_Frequency_offset 10
 
 uint8_t blink_defaults[11] = {
-    EFFECT_BLINK,
+    EFFECT_WS_BLINK,
     0, // Blink_Timer_default_H = 0;
     150, // Blink_Timer_default_L = 150; // Ave eye blink duration.
     0x6a, // Blink_Left_R_default = 0x6A; // #6A5ACD (Slate Blue)
@@ -42,7 +42,7 @@ struct {
     char right_blink : 1;
 } Blink_state;
 
-uint8_t r;
+uint8_t r; // For random.
 
 /**
  * @brief Blink effect.
@@ -52,10 +52,10 @@ uint8_t r;
  * 1: Copy defaults into registry, including effect id.
  * 0: Do the blinking effect.
  */
-void effect_ws_blink(Things_t thing, int flag)
+int effect_ws_blink(Things_t thing, int flag)
 {   
-    // printf("In effect_blink\r\n");
-    // printf("thing is: %u\n", thing); // @debug = 1, from Things_t in global.h.
+    // printf("In effect_ws_blink, thing is: %u, flag is: %d\r\n", thing, flag); // @debug = 1 for Eyes, from Things_t in global.h.
+    // printf("thing is: %u\n", thing); // @debug = 1 for Eyes, from Things_t in global.h.
 
     // @todo take `thing` in account!
 
@@ -129,4 +129,5 @@ void effect_ws_blink(Things_t thing, int flag)
     // printf("Blink state: "); printBin(blink_state, 1); // @debug
     // printf("Blink state: "); printBinByRef(&Blink_state, 1); // @debug
     // printNon0Reg(registry); // @debug
+    return 1; // "Dirty"
 }
