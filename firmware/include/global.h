@@ -58,6 +58,8 @@ extern volatile uint8_t registry[REG_COUNT];
 
 void arrayToRegCopy(volatile uint8_t *dest, size_t dest_offset, uint8_t *src, size_t src_offset, size_t dest_len);
 
+void constToRegCopy(volatile uint8_t *dest, size_t dest_offset, const uint8_t *src, size_t src_offset, size_t dest_len);
+
 void regToRegCopy(volatile uint8_t *dest, size_t dest_offset, volatile uint8_t *src, size_t src_offset, size_t dest_len);
 
 void printNon0Reg(volatile uint8_t *reg);

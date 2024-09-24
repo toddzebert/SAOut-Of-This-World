@@ -50,37 +50,16 @@ volatile uint8_t timer_tick = 0;
 // I2C.
 #define I2C_ADDRESS 0x09
 
-// @todo move all *comet* stuff below.
-#define COMET_DEFAULT_TIMER_BASE 250 // 1/4s
-#define COMET_LENGTH 3
-uint16_t comet_timer_base = COMET_DEFAULT_TIMER_BASE;
+#define REG_RESERVED_RO_LENGTH 2 // Up to 16 avail.
 
-// @note: const does not work for these as pointers are pointed to them.
-// Red comet.
-// @todo remove.
-static uint32_t comet_colors_0[3] = {
-    0xC00000, 0x300000, 0x100000,
-};
-
-// Blue comet.
-// @todo Blue compensation (for low voltage).
-// @todo remove.
-static uint32_t comet_colors_1[3] = {
-    0x0000c0, 0x000030, 0x000010,
+const uint8_t reg_reserved_ro[REG_RESERVED_RO_LENGTH] = {
+    0, // API Major version,
+    3, // API Minor version
 };
 
 // @todo take gamma into account
 // https://hackaday.com/2016/08/23/rgb-leds-how-to-master-gamma-and-hue-for-perfect-brightness/ .
 
-// This complexity because of compilier directives; usaged also changes, ex:
-// (*comet_colors_current)[position_within_comet]; or comet_colors_current = &comet_colors_1;
-uint32_t (*comet_colors_current)[3] = &comet_colors_0;
-int comet_selection = 0;
-
-static int8_t comet_position = MIN_LED;
-static int8_t comet_direction = 1; // or -1
-volatile uint16_t comet_timer = COMET_DEFAULT_TIMER_BASE;
-static volatile uint8_t comet_dirty = 1; // or 0
 
 /**
  * @brief Initializes the timer for the 1ms tick.
@@ -157,20 +136,7 @@ void TIM1_UP_IRQHandler() {
  * @param ledno The LED number for which the color should be returned.
  * @return The color for the given LED number.
  */
-uint32_t WS2812BLEDCallback( int ledno )
-{
-    // @todo remove once code moved to comet.c.
-    /*
-    uint position_within_comet = comet_position - ledno;
-    if(comet_direction < 0) position_within_comet = ledno - comet_position;
-
-    if( position_within_comet < 0 ) return (uint32_t) 0x000000;
-
-    if( position_within_comet > (COMET_LENGTH - 1)) return (uint32_t) 0x000000;
-
-    return (*comet_colors_current)[position_within_comet];
-    */
-
+uint32_t WS2812BLEDCallback( int ledno ) {
     uint32_t color;
 
     int index = 0;
@@ -202,25 +168,6 @@ uint32_t WS2812BLEDCallback( int ledno )
     return color;
 }
 
-// @todo remove once code moved to comet.c.
-void cometUpdateHandler() {
-    comet_timer = comet_timer_base;
-
-    comet_position += comet_direction;
-
-    if( comet_position < MIN_LED ) {
-        comet_position = MIN_LED;
-        comet_direction = 1;
-    }
-    if( comet_position > LEDS ) {
-        comet_position = LEDS - (COMET_LENGTH - 1);
-        comet_direction = -1;
-    }
-    comet_dirty = 0;
-
-    WS2812BDMAStart(LEDS);
-}
-
 
 void init_gpio() {
     // @todo ?
@@ -237,7 +184,12 @@ void init_gpio() {
  * @todo Check protected "RO" registers and replace.
  */
 void onI2cWrite(uint8_t reg, uint8_t length) {
-    // @todo check protected "RO" registers and replace.
+    // Check protected "RO" registers and replace with our settings.
+    // @debug untested.
+    if (reg < REG_RESERVED_RO_LENGTH)
+    {
+         constToRegCopy(registry, 0, reg_reserved_ro, 0, sizeof(reg_reserved_ro) * sizeof(uint8_t));
+    }
 }
 
 
@@ -263,12 +215,6 @@ void init_i2c() {
     // Address, registers, registers length, onWrite callback, onRead callback, read only.
     // > The I2C1 peripheral can also listen on a secondary address. [see Readme]
     SetupI2CSlave(I2C_ADDRESS, registry, sizeof(registry), onI2cWrite, onI2cRead, false);
-
-    // Clear registry.
-    // @todo ***** > warning: passing argument 1 of 'memset' discards 'volatile' qualifier from pointer target type [-Wdiscarded-qualifiers].
-    // @note the (void *) is a hack to try to avoid the warning.
-    // @todo is this even needed? ******
-    // memset((void *)registry, 0, sizeof registry);
 }
 
 /**
@@ -329,7 +275,7 @@ int main()
             if ( button1_timer == 0 ) button1Handler();
 
             // Handle Eyes.
-            eyes_timer--;
+            eyes_timer--; // @todo remove once .c file converted to use externs...
             if ( eyes_timer == 0 )
             {
                 ws_dirty = eyesHandler(0) | ws_dirty;

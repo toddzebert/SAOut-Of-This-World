@@ -24,7 +24,7 @@ enum Blink_mode {
 #define Blink_Mode_offset 9 // This will be enum so have to cast both ways.
 #define Blink_Frequency_offset 10
 
-uint8_t blink_defaults[11] = {
+const uint8_t blink_defaults[11] = {
     EFFECT_WS_BLINK,
     0, // Blink_Timer_default_H = 0;
     150, // Blink_Timer_default_L = 150; // Ave eye blink duration.
@@ -65,7 +65,7 @@ int effect_ws_blink(Things_t thing, int flag)
         Blink_state.right_blink = 0;
         // Copy defaults to registry.
         // @debug ***** below hard coded to Eyes, but needs to be dynamic. 
-        arrayToRegCopy(registry, REG_EYES_START, blink_defaults, 0, sizeof(blink_defaults) * sizeof(uint8_t));
+        constToRegCopy(registry, REG_EYES_START, blink_defaults, 0, sizeof(blink_defaults) * sizeof(uint8_t));
         // Set "raw" reg LED settings from defaults.
         regToRegCopy(registry, REG_EYES_LED_START, registry, REG_EYES_START + Blink_LEDs_offset, Blink_LEDs_offset_length * sizeof(uint8_t));
     }

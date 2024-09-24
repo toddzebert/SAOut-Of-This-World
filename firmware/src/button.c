@@ -48,22 +48,6 @@ void button1Handler ( void ) {
         if ( button1_state & 1 ) {
             printf("button1_state &1 TRUE : %d\r\n", button1_state); // @debug
             button1_state = 0;
-
-            /* @todo move.
-            switch (comet_selection)    {
-                case 0: {
-                    comet_colors_current = &comet_colors_1;
-                    comet_selection = 1;
-                    break;
-                    }
-                case 1: {
-                    comet_colors_current = &comet_colors_0;
-                    comet_selection = 0;
-                    break;
-                    }
-            }
-            printf("comet_selection: %d\r\n\r\n", comet_selection); // @debug
-            */
         }
         // printf("button1_timer reset to BASE\r\n"); // @debug
         button1_timer = BUTTON_TIMER_BASE;

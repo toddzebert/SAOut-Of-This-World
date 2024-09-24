@@ -2,6 +2,8 @@
 
 #define Raw_Timer_offset 1 // 2 bytes
 
+// @debug untested.
+
 int effect_raw(Things_t thing, int flag) {
     // @todo ?
 

@@ -2,8 +2,6 @@
 
 volatile uint8_t registry[140] = {0};
 
-uint32_t ws_leds[16] = {0}; // @todo remove.
-
 uint16_t thing_timer[THING_COUNT];
 
 const uint8_t reg_thing_start[THING_COUNT] = {
@@ -34,6 +32,14 @@ void arrayToRegCopy(volatile uint8_t *dest, size_t dest_offset, uint8_t *src, si
     }
 }
 
+void constToRegCopy(volatile uint8_t *dest, size_t dest_offset, const uint8_t *src, size_t src_offset, size_t dest_len) {
+    const uint8_t *s = src;
+
+    for (size_t i = 0; i < dest_len; i++) {
+        dest[dest_offset + i] = s[src_offset + i];
+    }
+}
+
 /**
  * @brief Copy from one registry to another.
  *
@@ -48,8 +54,6 @@ void arrayToRegCopy(volatile uint8_t *dest, size_t dest_offset, uint8_t *src, si
  * This function exists because memcpy() does not take volatile params.
  */
 void regToRegCopy(volatile uint8_t *dest, size_t dest_offset, volatile uint8_t *src, size_t src_offset, size_t dest_len) {
-    // @todo
-    // char *d = dest;
     volatile uint8_t *s = src;
 
     for (size_t i = 0; i < dest_len; i++) {
@@ -80,6 +84,18 @@ void printNon0Reg(volatile uint8_t *reg) {
 }
 
 
+/**
+ * @brief Print out a byte in binary form.
+ *
+ * @param c The byte to print.
+ * @param newline Print a newline after printing, or not.
+ *
+ * @note No return value.
+ * 
+ * This (debug) function prints out the 8 bits of the given byte in binary form, with
+ * the leftmost (most significant) bit first. If @p newline is true, a newline is printed
+ * after printing the binary value.
+ */
 void printBin(uint8_t c, int newline)
 {
     for (int i = 7; i >= 0; --i)
