@@ -7,10 +7,8 @@
 
 // #pragma message ("In eyes.h") // @debug
 
-// #define EYES_TIMER_BASE 5 // @todo needed?
-
-extern uint16_t eyes_timer; // @todo needed?
-extern uint8_t eyes_effect; // @todo needed?
+extern uint16_t eyes_timer; // @todo to be replaced by new array.
+extern uint8_t eyes_effect;
 
 int eyesHandler(int flag);
 

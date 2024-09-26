@@ -4,8 +4,13 @@
 */
 
 /*
+    *** THESE ARE FOR CH32V003F4P6 (TSSOP-20) Eval Board ***
+    *** BUT SAO will use ...F4U6 (QFN-20) chip ***
+    *** EACH have 20pins so pins should be mostly similar ***
+
     From ws2812b_dma_spi_led_driver.h:
         For the CH32V003 this means output will be on PORTC Pin 6
+        void DMA1_Channel3_IRQHandler( void );
 
     From i2c_slave.h:
         SDA and SCL [PC1 and PC2].
@@ -21,7 +26,11 @@
         PC4 - TBD
 
     LED(s):
-        PC0 (@debug for now)
+        // PC0 = 32 (@debug for now) - did not work! AKA TIM2CH3 (interrupt)
+        // PD7 = 55 (@debug for now) - did not work! AKA NRST (reset/bootloader related), TIM2C4 (interrupt)  
+        PD2 = 50 (@debug for now)
+        PD3 = 51 (@debug for now)
+        PD4 = 52 (@debug for now)
     
     For UART printf, on:
 		CH32V003, Port D5, 115200 8n1
@@ -35,26 +44,27 @@ The I2C (inter-IC) bus can transfer data at different speeds, including:
     High-speed mode: 3.4 Mbit/s 
     Ultra-fast mode: 5 Mbit/s 
 
-WS2812B:
-    Send data at speeds of 800Kbps.
+
 */
 
 #include "main.h"
 
-#define LEDS 16
-#define MIN_LED 0
-// This is default in .h but making it explicit. > Has to be divisible by 4.
+// Stars GPIO pins.
+// @debug PC0 (32), PD7 (55) did not work for unknown reasons.
+const uint8_t stars_gpio_pins[STARS_GPIO_PINS_NUM] = { 50, 51, 52 };
 
 volatile uint8_t timer_tick = 0;
 
 // I2C.
 #define I2C_ADDRESS 0x09
 
+// Reserved registers. Meant to be R/O but the lib doesn't support it, so this is the backup copy.
 #define REG_RESERVED_RO_LENGTH 2 // Up to 16 avail.
 
 const uint8_t reg_reserved_ro[REG_RESERVED_RO_LENGTH] = {
     0, // API Major version,
     3, // API Minor version
+    // @todo more?
 };
 
 // @todo take gamma into account
@@ -83,9 +93,9 @@ const uint8_t reg_reserved_ro[REG_RESERVED_RO_LENGTH] = {
 void init_timer() {
     // @todo change to use TIM2? Would also change ISR name.
     RCC->APB2PCENR |= RCC_APB2Periph_TIM1; // > APB2 peripheral clock enable register.
-    // @todo why both TIM1 and TIM2?
+    // @todo why both TIM1CH1 and ...CH2?
     TIM1->CTLR1 |= TIM_CounterMode_Up | TIM_CKD_DIV1;
-    TIM1->CTLR2 = TIM_MMS_1;
+    TIM1->CTLR2 = TIM_MMS_1; // @debug CAN WE DO WITHOUT THIS?
     
     TIM1->ATRLR = SOTW_ATRLR-1; // > Auto-reload value register; the counter stops when ATRLR is empty.
     TIM1->PSC = SOTW_PSC-1; // > Counting clock prescaler.
@@ -120,57 +130,31 @@ void TIM1_UP_IRQHandler() {
 }
 
 
-/**
- * @brief Callback that returns a color for a LED.
- *
- * This function is called by the WS2812B LED driver library for each LED in the
- * strip. The function should return a uint32_t containing the color for the given
- * LED number. The color format is 0xRRGGBB.
- *
- * The function is called with the LED number as an argument. The LED number is
- * zero-based, meaning the first LED is number 0.
- *
- * The function should return the color for the given LED number. The color
- * should be in the format 0xRRGGBB.
- *
- * @param ledno The LED number for which the color should be returned.
- * @return The color for the given LED number.
- */
-uint32_t WS2812BLEDCallback( int ledno ) {
-    uint32_t color;
+// Init non-i2c GPIO.
+void init_gpio() {
+    // funGpioInitAll(); // This doesn't need to be called as the i2c lib does.
+    // ... so place this below the i2c init.
 
-    int index = 0;
-    // char *thing = ""; // @debug
-
-    if (ledno < EYES_COUNT) {
-        index = REG_EYES_LED_START + (ledno * 3);
-        // thing = "eyes"; // @debug
+    // Stars LEDs.
+    for (int i = 0; i < STARS_GPIO_PINS_NUM; i++) {
+        funPinMode(stars_gpio_pins[i] , GPIO_Speed_10MHz | GPIO_CNF_OUT_PP );
     }
-    else if (ledno < (EYES_COUNT + UPPER_TRIM_COUNT)) {
-        index = REG_UPPER_TRIM_LED_START + (ledno - EYES_COUNT) * 3;
-        // thing = "upper trim"; // @debug
-    }
-    else
-    {
-        index = REG_LOWER_TRIM_LED_START + (ledno - EYES_COUNT - UPPER_TRIM_COUNT) * 3;
-        // thing = "lower trim"; // @debug
-    }
-
-    // The WS2812B lib expects the color in the format 0x00RRGGBB.
-    // @debug could also try casting the 3 consecutive bytes into a uint32_t (starting from index-1, and then clearing MSB).
-    color = (uint32_t) registry[index] << 16 | (uint32_t) registry[index + 1] << 8 | (uint32_t) registry[index + 2];
-
-    // @todo adjust for blue vs other colors.
-    // @todo gamma adjustment.
-
-    // printf("WS2812BLEDCallback: ledno %d thing %s reg index %d raw_color 0x%08lx\n", ledno, thing, index, raw_color); // @debug
-    
-    return color;
 }
 
 
-void init_gpio() {
-    // @todo ?
+void starsUpdate()
+{
+    for (int i = 0; i < STARS_GPIO_PINS_NUM; i++) {
+        // We'll let the compiler optimize this away.
+        // @todo or maybe use: !!registry[REG_STARS_LED_START + i]
+        if (registry[REG_STARS_LED_START + i])
+        {
+            funDigitalWrite( stars_gpio_pins[i], FUN_HIGH );
+        }
+        else {
+            funDigitalWrite( stars_gpio_pins[i], FUN_LOW );
+        }
+    }   
 }
 
 
@@ -188,7 +172,7 @@ void onI2cWrite(uint8_t reg, uint8_t length) {
     // @debug untested.
     if (reg < REG_RESERVED_RO_LENGTH)
     {
-         constToRegCopy(registry, 0, reg_reserved_ro, 0, sizeof(reg_reserved_ro) * sizeof(uint8_t));
+        constToRegCopy(registry, 0, reg_reserved_ro, 0, sizeof(reg_reserved_ro) * sizeof(uint8_t));
     }
 }
 
@@ -205,9 +189,8 @@ void onI2cRead(uint8_t reg) {
     // @todo ?
 }
 
+// @debug This is never called directly?
 void init_i2c() {
-    // funGpioInitAll(); // @todo from i2c code... for using fun* functions.
-
     // i2c_slave.
     funPinMode(PC1, GPIO_CFGLR_OUT_10Mhz_AF_OD); // SDA
     funPinMode(PC2, GPIO_CFGLR_OUT_10Mhz_AF_OD); // SCL
@@ -236,31 +219,35 @@ int main()
     // Let things settle.
     Delay_Ms( 200 );
 
-    // printf("In Main\r\n"); // @debug
+    init_i2c();
 
+    // Must be below init_i2c().
     init_gpio();
 
     // Let things settle.
     Delay_Ms( 200 );
+
+    // funDigitalWrite( PC0, FUN_HIGH ); // @debug
+    // Delay_Ms( 2000 ); // @debug
 
     // Init "things".
     button1Init();
 
     // @todo All the things inits should be done more dymamicly.
     eyesHandler(1);
+    starsHandler(1);
 
-    // WS2812 init and initial "start" to render. Must go after all "things" inits.
-    WS2812BDMAInit();
-    WS2812BDMAStart(LEDS);
+    // WS2812 init and initial "start" to render. Must go after all "things" inits, ...Handler(1)'s.
+    WS2812_Init();
 
     init_timer();
 
     // Let things settle.
     Delay_Ms( 100 );
 
-    // printf("In Main before while()\r\n"); // @debug, but this is the first showing in monitor log.
-
+    // Prep for main loop.
     int ws_dirty = 0;
+    int stars_dirty = 0;
 
     while(1)
     {
@@ -275,19 +262,29 @@ int main()
             if ( button1_timer == 0 ) button1Handler();
 
             // Handle Eyes.
-            eyes_timer--; // @todo remove once .c file converted to use externs...
+            eyes_timer--; // @todo alter once .c file converted to use arrays...
             if ( eyes_timer == 0 )
             {
                 ws_dirty = eyesHandler(0) | ws_dirty;
             }
 
-            // @todo have to handle GPIO stars diff from WS things!
-
             // This should always be at the end, after all Things handlers.
             if (ws_dirty) {
                 ws_dirty = 0;
-                // printf("WS dirty\r\n"); // @debug
-                WS2812BDMAStart(LEDS);
+                WS2812_Handler();
+            }
+
+            // Handle Stars.
+            thing_timer[THING_STARS]--;
+            if ( thing_timer[THING_STARS] == 0 )
+            {
+                stars_dirty = starsHandler(0) | stars_dirty; // The or is unnecessary, but for the sake of consistency...
+            }
+
+            // This could be a part of the Stars handler, but for the sake of consistency, it's here.
+            if (stars_dirty) {
+                stars_dirty = 0;
+                starsUpdate(); // @todo.
             }
         }
     }

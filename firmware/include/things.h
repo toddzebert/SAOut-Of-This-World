@@ -10,6 +10,7 @@
 // #pragma message ("In things.h") // @debug
 
 #include "things/eyes.h"
+#include "things/stars.h"
 // @todo more...
 
 #endif /* THINGS_H_ */

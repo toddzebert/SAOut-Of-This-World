@@ -11,6 +11,13 @@ const uint8_t reg_thing_start[THING_COUNT] = {
     REG_LOWER_TRIM_START
 };
 
+const uint8_t reg_thing_led_start[THING_COUNT] = {
+    REG_STARS_LED_START,
+    REG_EYES_LED_START,
+    REG_UPPER_TRIM_LED_START,
+    REG_LOWER_TRIM_LED_START
+};
+
 /**
  * @brief Copy from array to registry.
  *

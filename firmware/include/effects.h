@@ -3,5 +3,6 @@
 
 #include "effects/ws_blink.h"
 #include "effects/raw.h"
+#include "effects/twinkle.h"
 
 #endif /* EFFECTS_H_ */

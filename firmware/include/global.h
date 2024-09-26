@@ -18,6 +18,8 @@ extern Things_t thing;
 #define THING_COUNT 4
 extern uint16_t thing_timer[THING_COUNT];
 
+#define STARS_GPIO_PINS_NUM 3
+
 // Effects.
 #define EFFECT_UNDEFINED 0
 #define EFFECT_RAW 1
@@ -47,9 +49,11 @@ extern uint16_t thing_timer[THING_COUNT];
 #define REG_LOWER_TRIM_START 96
 #define REG_LOWER_TRIM_END 139
 #define REG_LOWER_TRIM_COUNT (REG_LOWER_TRIM_END - REG_LOWER_TRIM_START + 1)
-#define REG_LOWER_TRIM_LED_START 115
+#define REG_LOWER_TRIM_LED_START 113
 
 extern const uint8_t reg_thing_start[THING_COUNT];
+
+extern const uint8_t reg_thing_led_start[THING_COUNT];
 
 // i2c and source of WS callback data.
 // @note Can be extended to 256 registers as needed, and presets can be set in the array.

@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 
-#include "../global.h" // Need for Things_t, etc.
+#include "../global.h"
 
 extern uint16_t thing_timer[THING_COUNT];
 

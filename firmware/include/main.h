@@ -4,23 +4,16 @@
 #include <ch32v003fun.h>
 
 #include <stdio.h>
-// #include <string.h> // @debug needed, testing...
+// #include <string.h>
 // #include <stdlib.h>
 // #include <stdint.h>
 
-
-// @todo document below.
-#define DMALEDS 20 // For lib, for testing.
-
-// @todo document below.
-#define WS2812DMA_IMPLEMENTATION
-#define WSRBG
-
-#include <ch32v003_GPIO_branchless.h>
-#include <ws2812b_dma_spi_led_driver.h>
+// #include <ch32v003_GPIO_branchless.h> // @debug may not need this as it redundant with the fun* functions
+// #include <ws2812b_dma_spi_led_driver.h>
 #include <i2c_slave.h>
 
 #include "global.h"
+#include "ws2812.h"
 #include "button.h"
 // #include "effects.h"
 #include "things.h"

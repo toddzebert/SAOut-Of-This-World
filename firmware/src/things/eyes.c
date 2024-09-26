@@ -1,7 +1,7 @@
 #include "things/eyes.h"
 
-uint16_t eyes_timer; // @todo needed?
-uint8_t eyes_effect; // @todo needed?
+uint16_t eyes_timer; // @todo be replaced by new array.
+uint8_t eyes_effect;
 
 /**
  * @brief Handler for the eyes thing.
