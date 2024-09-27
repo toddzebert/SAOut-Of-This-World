@@ -28,14 +28,15 @@ const uint8_t blink_defaults[11] = {
     EFFECT_WS_BLINK,
     0, // Blink_Timer_default_H = 0;
     150, // Blink_Timer_default_L = 150; // Ave eye blink duration.
-    0x6a, // Blink_Left_R_default = 0x6A; // #6A5ACD (Slate Blue)
-    0x5a, // Blink_Left_G_default = 0x5a;
+    0x3a, // Blink_Left_R_default = 0x6A; // #6A5ACD (Slate Blue)
+    0x8a, // Blink_Left_G_default = 0x5a;
     0xcd, // Blink_Left_B_default = 0xCD;
     0x7b, // Blink_Right_R_default = 0x7B; // #7B68EE (Medium Slate Blue)
-    0x68, // Blink_Right_G_default = 0x68;
+    0x58, // Blink_Right_G_default = 0x68;
     0xee, // Blink_Right_B_default = 0xEE;
     (uint8_t) Blink_Random, // Blink_Mode_default
     15, // Blink_Frequency_default = 15;
+    // @note [move this comment] green is brightess, followed closely by red, then a distant blue.
 };
 
 struct {
@@ -125,7 +126,9 @@ int effect_ws_blink(Things_t thing, int flag)
     }
 
     // Set timer.
-    eyes_timer = registry[REG_EYES_START + Blink_Timer_offset] * 256 + registry[REG_EYES_START + Blink_Timer_offset + 1];
+    // eyes_timer = registry[REG_EYES_START + Blink_Timer_offset] * 256 + registry[REG_EYES_START + Blink_Timer_offset + 1];
+    // eyes_timer = registry[REG_EYES_START + Blink_Timer_offset] * 256 + registry[REG_EYES_START + Blink_Timer_offset + 1];
+    thing_timer[thing] = registry[reg_thing_start[thing] + Blink_Timer_offset] * 256 + registry[reg_thing_start[thing] + Blink_Timer_offset + 1];
     // printf("Eyes timer: %d\n", eyes_timer); // @debug
     // printf("Blink state: "); printBin(blink_state, 1); // @debug
     // printf("Blink state: "); printBinByRef(&Blink_state, 1); // @debug

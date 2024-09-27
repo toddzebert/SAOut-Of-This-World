@@ -7,6 +7,14 @@
     *** THESE ARE FOR CH32V003F4P6 (TSSOP-20) Eval Board ***
     *** BUT SAO will use ...F4U6 (QFN-20) chip ***
     *** EACH have 20pins so pins should be mostly similar ***
+    CH32 = product line.
+    V = QingKe RISC-V-based
+    0 = QingKe V2 core (no FP)
+    03 = General Purpose
+    F = 20 pins
+    4 = 16 Kbytes of Flash memory 
+    P/U = TSSOP/QFN respectively
+    6 = -40℃～85℃ (industrial-grade) 
 
     From ws2812b_dma_spi_led_driver.h:
         For the CH32V003 this means output will be on PORTC Pin 6
@@ -157,6 +165,16 @@ void starsUpdate()
     }   
 }
 
+void copyInRegReservedGlobal()
+{
+    // @todo future use?
+}
+
+void copyInRegReservedRO()
+{
+    constToRegCopy(registry, 0, reg_reserved_ro, 0, sizeof(reg_reserved_ro) * sizeof(uint8_t));
+}
+
 
 /**
  * @brief Called when a write is received over I2C, with values altered in registry.
@@ -170,10 +188,7 @@ void starsUpdate()
 void onI2cWrite(uint8_t reg, uint8_t length) {
     // Check protected "RO" registers and replace with our settings.
     // @debug untested.
-    if (reg < REG_RESERVED_RO_LENGTH)
-    {
-        constToRegCopy(registry, 0, reg_reserved_ro, 0, sizeof(reg_reserved_ro) * sizeof(uint8_t));
-    }
+    if (reg < REG_RESERVED_RO_LENGTH) copyInRegReservedRO();
 }
 
 
@@ -227,6 +242,10 @@ int main()
     // Let things settle.
     Delay_Ms( 200 );
 
+    copyInRegReservedRO();
+
+    copyInRegReservedGlobal();
+
     // funDigitalWrite( PC0, FUN_HIGH ); // @debug
     // Delay_Ms( 2000 ); // @debug
 
@@ -236,6 +255,8 @@ int main()
     // @todo All the things inits should be done more dymamicly.
     eyesHandler(1);
     starsHandler(1);
+    upperTrimHandler(1);
+    lowerTrimHandler(1);
 
     // WS2812 init and initial "start" to render. Must go after all "things" inits, ...Handler(1)'s.
     WS2812_Init();
@@ -252,8 +273,7 @@ int main()
     while(1)
     {
         // @todo button(s) occasional polling and debounce here.
-        // @todo perhaps make dirty more descriptive and make volatile global so updates only set if there's a change?
-        // @todo ... or thing handlers should return a dirty value?
+
         if (timer_tick) {
             timer_tick = 0;
 
@@ -262,23 +282,37 @@ int main()
             if ( button1_timer == 0 ) button1Handler();
 
             // Handle Eyes.
-            eyes_timer--; // @todo alter once .c file converted to use arrays...
-            if ( eyes_timer == 0 )
+            thing_timer[THING_EYES]--;
+            if ( thing_timer[THING_EYES] == 0 )
             {
-                ws_dirty = eyesHandler(0) | ws_dirty;
+                ws_dirty = eyesHandler(0) || ws_dirty;
             }
 
-            // This should always be at the end, after all Things handlers.
+            // Handle Upper Trim.
+            thing_timer[THING_UPPER_TRIM]--;
+            if ( thing_timer[THING_UPPER_TRIM] == 0 )
+            {
+                ws_dirty = upperTrimHandler(0) || ws_dirty;
+            }
+
+            // Handle Lower Trim.
+            thing_timer[THING_LOWER_TRIM]--;
+            if ( thing_timer[THING_LOWER_TRIM] == 0 )
+            {
+                ws_dirty = lowerTrimHandler(0) || ws_dirty;
+            }
+
+            // This should always be at the end, after all WS Things handlers.
             if (ws_dirty) {
                 ws_dirty = 0;
                 WS2812_Handler();
             }
 
-            // Handle Stars.
+            // Handle Stars (not a WS Thing).
             thing_timer[THING_STARS]--;
             if ( thing_timer[THING_STARS] == 0 )
             {
-                stars_dirty = starsHandler(0) | stars_dirty; // The or is unnecessary, but for the sake of consistency...
+                stars_dirty = starsHandler(0) || stars_dirty; // The or is unnecessary, but for the sake of consistency...
             }
 
             // This could be a part of the Stars handler, but for the sake of consistency, it's here.

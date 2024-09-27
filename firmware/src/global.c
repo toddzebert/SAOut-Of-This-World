@@ -2,6 +2,13 @@
 
 volatile uint8_t registry[140] = {0};
 
+const uint8_t thing_led_count[] = {
+    STARS_COUNT,
+    EYES_COUNT,
+    UPPER_TRIM_COUNT,
+    LOWER_TRIM_COUNT
+};
+
 uint16_t thing_timer[THING_COUNT];
 
 const uint8_t reg_thing_start[THING_COUNT] = {
@@ -17,6 +24,8 @@ const uint8_t reg_thing_led_start[THING_COUNT] = {
     REG_UPPER_TRIM_LED_START,
     REG_LOWER_TRIM_LED_START
 };
+
+const uint8_t RGB_Black[3] = {0, 0, 0};
 
 /**
  * @brief Copy from array to registry.
@@ -39,6 +48,19 @@ void arrayToRegCopy(volatile uint8_t *dest, size_t dest_offset, uint8_t *src, si
     }
 }
 
+/**
+ * @brief Copy from const array to registry.
+ *
+ * @param dest Destination. Must be a pointer to volatile uint8_t.
+ * @param dest_offset Offset from start of dest to start copying to.
+ * @param src Source. Must be a pointer to const uint8_t.
+ * @param src_offset Offset from start of src to start copying from.
+ * @param dest_len Number of bytes to copy.
+ *
+ * @note No return value.
+ * 
+ * This function exists because memcpy() does not take volatile params.
+ */
 void constToRegCopy(volatile uint8_t *dest, size_t dest_offset, const uint8_t *src, size_t src_offset, size_t dest_len) {
     const uint8_t *s = src;
 
@@ -66,6 +88,13 @@ void regToRegCopy(volatile uint8_t *dest, size_t dest_offset, volatile uint8_t *
     for (size_t i = 0; i < dest_len; i++) {
         dest[dest_offset + i] = s[src_offset + i];
     }
+}
+
+inline uint8_t byteIsPowerOfTwo(uint8_t x)
+{
+    return (x != 0) && ((x & (x - 1)) == 0);
+    // @note or return ((x != 0) && ((x & (~x + 1)) == x));
+    // @note or return (x == 1 || x == 2 || x == 4 || x == 8 || x == 16 || x == 32 || x == 64 || x == 128);
 }
 
 /**

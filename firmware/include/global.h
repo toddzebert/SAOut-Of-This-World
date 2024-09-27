@@ -15,8 +15,17 @@ typedef enum {
 
 extern Things_t thing;
 
+#define STARS_COUNT 5 // (white LEDs via GPIO)
+#define EYES_COUNT 2 // (WS2812B)
+#define UPPER_TRIM_COUNT 5 // (WS2812B)
+#define LOWER_TRIM_COUNT 9 // (WS2812B)
+
+extern const uint8_t thing_led_count[];
+
 #define THING_COUNT 4
 extern uint16_t thing_timer[THING_COUNT];
+
+extern const uint8_t RGB_Black[3];
 
 #define STARS_GPIO_PINS_NUM 3
 
@@ -44,7 +53,7 @@ extern uint16_t thing_timer[THING_COUNT];
 #define REG_UPPER_TRIM_START 67
 #define REG_UPPER_TRIM_END 95
 #define REG_UPPER_TRIM_COUNT (REG_UPPER_TRIM_END - REG_UPPER_TRIM_START + 1)
-#define REG_UPPER_TRIM_LED_START 83
+#define REG_UPPER_TRIM_LED_START 81
 
 #define REG_LOWER_TRIM_START 96
 #define REG_LOWER_TRIM_END 139
@@ -60,12 +69,17 @@ extern const uint8_t reg_thing_led_start[THING_COUNT];
 #define REG_COUNT 140
 extern volatile uint8_t registry[REG_COUNT];
 
+// Memcpy-like functions.
 void arrayToRegCopy(volatile uint8_t *dest, size_t dest_offset, uint8_t *src, size_t src_offset, size_t dest_len);
 
 void constToRegCopy(volatile uint8_t *dest, size_t dest_offset, const uint8_t *src, size_t src_offset, size_t dest_len);
 
 void regToRegCopy(volatile uint8_t *dest, size_t dest_offset, volatile uint8_t *src, size_t src_offset, size_t dest_len);
 
+// Misc functions.
+uint8_t byteIsPowerOfTwo(uint8_t x);
+
+// Debug functions.
 void printNon0Reg(volatile uint8_t *reg);
 
 void printBin(uint8_t c, int newline);

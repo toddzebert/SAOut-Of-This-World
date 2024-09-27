@@ -8,14 +8,12 @@
 // #include <stdlib.h>
 // #include <stdint.h>
 
-// #include <ch32v003_GPIO_branchless.h> // @debug may not need this as it redundant with the fun* functions
-// #include <ws2812b_dma_spi_led_driver.h>
 #include <i2c_slave.h>
 
 #include "global.h"
 #include "ws2812.h"
 #include "button.h"
-// #include "effects.h"
+// #include "effects.h" // @note including breaks everything ;)
 #include "things.h"
 
 // ATRLR 10(-1) and PSC 4800(-1) should result in a 1ms timer.

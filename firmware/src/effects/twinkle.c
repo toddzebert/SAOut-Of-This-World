@@ -50,7 +50,6 @@ int effect_twinkle(Things_t thing, int flag) {
                 registry[reg_thing_led_start[thing] + i] = state;
                 // Set dirty.
                 dirty = 1;
-                // printf("Setting LED %d to %d\n", i, state); // @debug
             }
         }
     }

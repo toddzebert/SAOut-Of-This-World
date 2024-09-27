@@ -1,16 +1,11 @@
 #ifndef THINGS_H_
 #define THINGS_H_
 
-#define STARS_COUNT 5 // (white LEDs via GPIO)
-#define EYES_COUNT 2 // (WS2812B)
-#define UPPER_TRIM_COUNT 5 // (WS2812B)
-#define LOWER_TRIM_COUNT 9 // (WS2812B)
-
-
-// #pragma message ("In things.h") // @debug
+// This file just to collect all the things as a convenience.
 
 #include "things/eyes.h"
 #include "things/stars.h"
-// @todo more...
+#include "things/upper_trim.h"
+#include "things/lower_trim.h"
 
 #endif /* THINGS_H_ */

@@ -38,6 +38,7 @@ void button1Handler ( void ) {
         }
         else
         // @note with pulldown, there's a short periodvat startup when button is high!
+        // @todo switch to `fun built-in GPIO.
         if ( (!GPIO_digitalRead(GPIOv_from_PORT_PIN(GPIO_port_C, 3))) != (!button1_state) ) {
             // printf("if != TRUE \r\n"); // @debug
             if (button1_state)
