@@ -14,7 +14,7 @@
 // #define FUNCONF_USE_DEBUGPRINTF 1
 // #define FUNCONF_DEBUGPRINTF_TIMEOUT (1<<31) // Wait for a very very long time.
 #define FUNCONF_USE_UARTPRINTF  1
-#define FUNCONF_UART_PRINTF_BAUD 9600
+#define FUNCONF_UART_PRINTF_BAUD 9600 // @todo increase....
 // #define FUNCONF_NULL_PRINTF 0           // Have printf but direct it "nowhere"
 // #define FUNCONF_SYSTICK_USE_HCLK 0      // Should systick be at 48 MHz or 6MHz?
 // #define FUNCONF_TINYVECTOR 0            // If enabled, Does not allow normal interrupts.

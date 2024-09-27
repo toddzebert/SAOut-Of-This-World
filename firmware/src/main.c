@@ -4,8 +4,21 @@
 */
 
 /*
+    *** THESE ARE FOR CH32V003F4P6 (TSSOP-20) Eval Board ***
+    *** BUT SAO will use ...F4U6 (QFN-20) chip ***
+    *** EACH have 20pins so pins should be mostly similar ***
+    CH32 = product line.
+    V = QingKe RISC-V-based
+    0 = QingKe V2 core (no FP)
+    03 = General Purpose
+    F = 20 pins
+    4 = 16 Kbytes of Flash memory 
+    P/U = TSSOP/QFN respectively
+    6 = -40℃～85℃ (industrial-grade) 
+
     From ws2812b_dma_spi_led_driver.h:
-    **For the CH32V003 this means output will be on PORTC Pin 6**
+        For the CH32V003 this means output will be on PORTC Pin 6
+        void DMA1_Channel3_IRQHandler( void );
 
     From i2c_slave.h:
         SDA and SCL [PC1 and PC2].
@@ -21,138 +34,77 @@
         PC4 - TBD
 
     LED(s):
-        PC0 (@debug for now)
+        // PC0 = 32 (@debug for now) - did not work! AKA TIM2CH3 (interrupt)
+        // PD7 = 55 (@debug for now) - did not work! AKA NRST (reset/bootloader related), TIM2C4 (interrupt)  
+        PD2 = 50 (@debug for now)
+        PD3 = 51 (@debug for now)
+        PD4 = 52 (@debug for now)
     
     For UART printf, on:
 		CH32V003, Port D5, 115200 8n1
 */
-#include "main.h"
-#include <stdio.h>
 
-#include <ch32v003fun.h>
-#include <ch32v003_GPIO_branchless.h>
-#include <i2c_slave.h>
+/*
+The I2C (inter-IC) bus can transfer data at different speeds, including: 
+    Standard mode: 100 kbit/s 
+    Fast mode: 400 kbit/s 
+    Fast mode plus: 1 Mbit/s 
+    High-speed mode: 3.4 Mbit/s 
+    Ultra-fast mode: 5 Mbit/s 
 
-#define LEDS 16
-#define MIN_LED 0
-// This is default in .h but making it explicit. > Has to be divisible by 4.
-#define DMALEDS 20 // For lib, for testing.
 
-#define WS2812DMA_IMPLEMENTATION
-#define WSRBG
-
-/* @todo registers:
-    0-15: reserverd, 0 is version # - not writtable
-    16-31: reserved for gloabal settings
-    32-47: stars
-    48-63: eyes
-    64-95: upper trim
-    96-127: lower trim
 */
 
-#include <ws2812b_dma_spi_led_driver.h>
+#include "main.h"
+
+// Stars GPIO pins.
+// @debug PC0 (32), PD7 (55) did not work for unknown reasons.
+const uint8_t stars_gpio_pins[STARS_GPIO_PINS_NUM] = { 50, 51, 52 };
 
 volatile uint8_t timer_tick = 0;
 
-// @debug testing.
-struct WsEffect comet = {
-    "comet",
-    "Comet",
-    250,
-    250,
-    250,
-    (uint32_t) 0xC00000,
-    1,
-    1,
-    1,
-    1,   
-};
-
-/*
-struct WsSections ws_section_eyes = {
-    "eyes",
-    WS_EYES_LED_START,
-    WS_EYES_LED_END,
-    WS_EYES_LED_COUNT,
-};
-*/
-
-/*
-struct WsSections ws_section_upper_trim = {
-    "upper_trim",
-    WS_UPPER_TRIM_START,
-    WS_UPPER_TRIM_END,
-    WS_UPPER_TRIM_COUNT
-};
-*/
-
-/*
-struct WsSections ws_section_lower_trim = {
-    "lower_trim",
-    WS_LOWER_TRIM_START,
-    WS_LOWER_TRIM_END,
-    WS_LOWER_TRIM_COUNT,
-};
-*/
-
-/* @debug not working, but not part of this branch's goal.
-struct WsSections ws_section_lower_trim;
-ws_section_lower_trim.machine_name = 'lower_trim';
-*/
-
 // I2C.
-// @note Can be extended to 256 registers as needed, and presets can be set in the array.
-volatile uint8_t i2c_registers[32] = {0x00};
 #define I2C_ADDRESS 0x09
 
-// Button.
-// PC3.
-#define BUTTON_TIMER_BASE 5
-// @todo these debounce intervals need some tweaking.
-#define BUTTON_ON_ATLEAST 20
-#define BUTTON_OFF_ATLEAST 30
-uint16_t button1_timer = BUTTON_TIMER_BASE;
-uint8_t button1_state = 0; // @todo TBD button function.
+// Reserved registers. Meant to be R/O but the lib doesn't support it, so this is the backup copy.
+#define REG_RESERVED_RO_LENGTH 2 // Up to 16 avail.
 
-#define COMET_DEFAULT_TIMER_BASE 250 // 1/4s
-#define COMET_LENGTH 3
-uint16_t comet_timer_base = COMET_DEFAULT_TIMER_BASE;
-
-// @note: const does not work for these as pointers are pointed to them.
-// Red comet.
-static uint32_t comet_colors_0[3] = {
-    0xC00000, 0x300000, 0x100000,
-};
-
-// Blue comet.
-// @todo Blue compensation (for low voltage).
-static uint32_t comet_colors_1[3] = {
-    0x0000c0, 0x000030, 0x000010,
+const uint8_t reg_reserved_ro[REG_RESERVED_RO_LENGTH] = {
+    0, // API Major version,
+    3, // API Minor version
+    // @todo more?
 };
 
 // @todo take gamma into account
 // https://hackaday.com/2016/08/23/rgb-leds-how-to-master-gamma-and-hue-for-perfect-brightness/ .
 
-// This complexity because of compilier directives; usaged also changes, ex:
-// (*comet_colors_current)[position_within_comet]; or comet_colors_current = &comet_colors_1;
-uint32_t (*comet_colors_current)[3] = &comet_colors_0;
-int comet_selection = 0;
 
-static int8_t comet_position = MIN_LED;
-static int8_t comet_direction = 1; // or -1
-volatile uint16_t comet_timer = COMET_DEFAULT_TIMER_BASE;
-static volatile uint8_t comet_dirty = 1; // or 0
-
-// Adapated from https://github.com/cnlohr/ch32v003fun/blob/master/examples/adc_fixed_fs/adc_fixed_fs.c .
-// TIM1C1 uses PD2.
+/**
+ * @brief Initializes the timer for the 1ms tick.
+ *
+ * The settings used are:
+ * - TIM1 is enabled and used.
+ * - The counter mode is Up-Counter.
+ * - The clock division is 1.
+ * - The master mode is set to Update.
+ * - The Auto-Reload value is set to 10 (1ms).
+ * - The Prescaler is set to 48000.
+ * - The Recurring Count Value is set to 0.
+ * - The Event Generation is set to Immediate.
+ * - The interrupt is enabled and the flag is cleared.
+ * - The DMA/Interrupt enable register is set to Update.
+ * - The Counter Enable bit is set.
+ * 
+ * Adapated from https://github.com/cnlohr/ch32v003fun/blob/master/examples/adc_fixed_fs/adc_fixed_fs.c .
+ * TIM1C1 uses PD2.
+ */
 void init_timer() {
     // @todo change to use TIM2? Would also change ISR name.
     RCC->APB2PCENR |= RCC_APB2Periph_TIM1; // > APB2 peripheral clock enable register.
-    // @todo why both TIM1 and TIM2?
+    // @todo why both TIM1CH1 and ...CH2?
     TIM1->CTLR1 |= TIM_CounterMode_Up | TIM_CKD_DIV1;
-    TIM1->CTLR2 = TIM_MMS_1;
+    TIM1->CTLR2 = TIM_MMS_1; // @debug CAN WE DO WITHOUT THIS?
     
-    // @debug now at 1/4s
     TIM1->ATRLR = SOTW_ATRLR-1; // > Auto-reload value register; the counter stops when ATRLR is empty.
     TIM1->PSC = SOTW_PSC-1; // > Counting clock prescaler.
     TIM1->RPTCR = 0; // > Recurring count value register.
@@ -166,184 +118,208 @@ void init_timer() {
 
 // Both adapted from https://github.com/cnlohr/ch32v003fun/blob/master/examples/adc_fixed_fs/adc_fixed_fs.c .
 void TIM1_UP_IRQHandler(void) __attribute__((interrupt));
+/**
+ * @brief Interrupt handler for the TIM1 Update Interrupt.
+ *
+ * This function is called whenever the TIM1 counter has reached its
+ * Auto-Reload value and the counter has been reloaded with the value
+ * of the Auto-Reload register.
+ *
+ * The interrupt flag is reset by writing the opposite value of the flag
+ * into the Interrupt Status Register.
+ */
 void TIM1_UP_IRQHandler() {
     timer_tick = 1;
 
-    // @todo what does this do? from source code.
+    // Reset the timer interrupt flag.
     if(TIM1->INTFR & TIM_FLAG_Update) {
         TIM1->INTFR = ~TIM_FLAG_Update;
     }
 }
 
-/*
-    Callback that returns a color for a LED.
-    Color fornat is 0xRRGGBB.
-*/
-uint32_t WS2812BLEDCallback( int ledno )
-{
-    // @todo this will have to have a switch to handle different animations.
 
-    uint position_within_comet = comet_position - ledno;
-    if(comet_direction < 0) position_within_comet = ledno - comet_position;
-
-    if( position_within_comet < 0 ) return (uint32_t) 0x000000;
-
-    if( position_within_comet > (COMET_LENGTH - 1)) return (uint32_t) 0x000000;
-
-    return (*comet_colors_current)[position_within_comet];
-}
-
-void cometUpdateHandler() {
-    comet_timer = comet_timer_base;
-
-    comet_position += comet_direction;
-
-    if( comet_position < MIN_LED ) {
-        comet_position = MIN_LED;
-        comet_direction = 1;
-    }
-    if( comet_position > LEDS ) {
-        comet_position = LEDS - (COMET_LENGTH - 1);
-        comet_direction = -1;
-    }
-    comet_dirty = 0;
-
-    WS2812BDMAStart(LEDS);
-}
-
-
+// Init non-i2c GPIO.
 void init_gpio() {
-    // funGpioInitAll(); // @todo from i2c code... for using fun* functions.
+    // funGpioInitAll(); // This doesn't need to be called as the i2c lib does.
+    // ... so place this below the i2c init.
 
-    GPIO_port_enable(GPIO_port_C);
+    // Stars LEDs.
+    for (int i = 0; i < STARS_GPIO_PINS_NUM; i++) {
+        funPinMode(stars_gpio_pins[i] , GPIO_Speed_10MHz | GPIO_CNF_OUT_PP );
+    }
+}
 
-    // PC3 for button1.
-    // @note changed to pullDown.    
-    GPIO_pinMode(GPIOv_from_PORT_PIN(GPIO_port_C, 3), GPIO_pinMode_I_pullDown, GPIO_Speed_In);
 
+void starsUpdate()
+{
+    for (int i = 0; i < STARS_GPIO_PINS_NUM; i++) {
+        // We'll let the compiler optimize this away.
+        // @todo or maybe use: !!registry[REG_STARS_LED_START + i]
+        if (registry[REG_STARS_LED_START + i])
+        {
+            funDigitalWrite( stars_gpio_pins[i], FUN_HIGH );
+        }
+        else {
+            funDigitalWrite( stars_gpio_pins[i], FUN_LOW );
+        }
+    }   
+}
+
+void copyInRegReservedGlobal()
+{
+    // @todo future use?
+}
+
+void copyInRegReservedRO()
+{
+    constToRegCopy(registry, 0, reg_reserved_ro, 0, sizeof(reg_reserved_ro) * sizeof(uint8_t));
+}
+
+
+/**
+ * @brief Called when a write is received over I2C, with values altered in registry.
+ * 
+ * @param[in] reg The register address written to.
+ * @param[in] length The number of bytes written.
+ * 
+ * @note This is a callback function and is not intended to be called directly.
+ * @todo Check protected "RO" registers and replace.
+ */
+void onI2cWrite(uint8_t reg, uint8_t length) {
+    // Check protected "RO" registers and replace with our settings.
+    // @debug untested.
+    if (reg < REG_RESERVED_RO_LENGTH) copyInRegReservedRO();
+}
+
+
+/**
+ * @brief Called when a read is requested over I2C from the registry, but is only an "alert".
+ * 
+ * @param[in] reg The register address read from.
+ * 
+ * @note This is a callback function and is not intended to be called directly.
+ * @todo Check if we need to do anything here.
+ */
+void onI2cRead(uint8_t reg) {
+    // @todo ?
+}
+
+// @debug This is never called directly?
+void init_i2c() {
     // i2c_slave.
     funPinMode(PC1, GPIO_CFGLR_OUT_10Mhz_AF_OD); // SDA
     funPinMode(PC2, GPIO_CFGLR_OUT_10Mhz_AF_OD); // SCL
-    /* @debug will use lib instead
-    RCC->APB2PCENR |= RCC_APB2Periph_GPIOC;
 
-    Delay_Ms( 100 );
-
-    DYN_GPIO_WRITE(GPIOC, CFGLR, (GPIO_CFGLR_t) { .PIN3 = GPIO_CFGLR_IN_FLOAT });
-
-    GPIO_CFGLR_t ioc = DYN_GPIO_READ(GPIOC, CFGLR);
-    */
-    /* from source...
-    ioc.PIN0 = GPIO_CFGLR_OUT_10Mhz_PP,
-	ioc.PIN1 = GPIO_CFGLR_IN_ANALOG;
-	DYN_GPIO_WRITE(GPIOC, CFGLR, ioc);
-    */
-    
-    // @todo now what??? *********
-
-    /* from AI....
-    GPIOC->CRH &= ~GPIO_CRH_MODE3;
-    GPIOC->CRH |= GPIO_CRH_MODE3_1;
-    GPIOC->CRH |= GPIO_CRH_CNF3_0;
-    GPIOC->CRH |= GPIO_CRH_CNF3_1;
-    */
+    // Address, registers, registers length, onWrite callback, onRead callback, read only.
+    // > The I2C1 peripheral can also listen on a secondary address. [see Readme]
+    SetupI2CSlave(I2C_ADDRESS, registry, sizeof(registry), onI2cWrite, onI2cRead, false);
 }
 
-void onI2cWrite(uint8_t reg, uint8_t length) {
-    // @todo
-}
-
-void onI2cRead(uint8_t reg) {
-    // @todo
-}
-
+/**
+ * @brief Main entry point.
+ * 
+ * @details
+ * This is the main entry point for the program. It initializes all the
+ * peripherals and starts the main loop.
+ * 
+ * The main loop is an infinite loop that checks for button presses and
+ * updates the LEDs accordingly. It also handles the WS2812B LEDs and makes
+ * sure that the LEDs are updated when needed.
+ * 
+ * @note This function does not return.
+ */
 int main()
 {
 	SystemInit();
     // Let things settle.
-    Delay_Ms( 100 );
+    Delay_Ms( 200 );
 
-    printf("In Main\r\n"); // @debug
+    init_i2c();
 
+    // Must be below init_i2c().
     init_gpio();
 
-    WS2812BDMAInit();
+    // Let things settle.
+    Delay_Ms( 200 );
+
+    copyInRegReservedRO();
+
+    copyInRegReservedGlobal();
+
+    // funDigitalWrite( PC0, FUN_HIGH ); // @debug
+    // Delay_Ms( 2000 ); // @debug
+
+    // Init "things".
+    button1Init();
+
+    // @todo All the things inits should be done more dymamicly.
+    eyesHandler(1);
+    starsHandler(1);
+    upperTrimHandler(1);
+    lowerTrimHandler(1);
+
+    // WS2812 init and initial "start" to render. Must go after all "things" inits, ...Handler(1)'s.
+    WS2812_Init();
 
     init_timer();
 
     // Let things settle.
     Delay_Ms( 100 );
 
-    // Address, registers, registers length, onWrite callback, onRead callback, read only.
-    // > The I2C1 peripheral can also listen on a secondary address. [see Readme]
-    SetupI2CSlave(I2C_ADDRESS, i2c_registers, sizeof(i2c_registers), onI2cWrite, onI2cRead, false);
-
-    printf("In Main before while()\r\n"); // @debug
+    // Prep for main loop.
+    int ws_dirty = 0;
+    int stars_dirty = 0;
 
     while(1)
     {
         // @todo button(s) occasional polling and debounce here.
-        if ( timer_tick ) {
+
+        if (timer_tick) {
             timer_tick = 0;
 
-            // Comet, but @todo w/generic animation handlers.
-            comet_timer--;
-            if( comet_timer == 0 ) {
-                cometUpdateHandler();
-                // printf("comet handler\r\n"); @debug
-            }
-
+            // Handle button1.
             button1_timer--;
-            // @todo somehow this needs to be moved to a button handler.
-            if( button1_timer == 0 ) {
-                /*
-                int test = GPIO_digitalRead(GPIOv_from_PORT_PIN(GPIO_port_C, 3)); // @debug
-                if ( test ) {
-                    printf("button1 !!: %d\r\n", test); // @debug
-                    //while (1) { } // debug.
-                }
-                */
+            if ( button1_timer == 0 ) button1Handler();
 
-                // Debounce button.
-                // Adapted from https://stackoverflow.com/a/48435065 .
-                if (button1_state > 1)
-                {
-                    button1_state -= 2;
-                    // printf("button1_state >1 : %d\r\n", button1_state); // @debug
-                }
-                else
-                // @note with pulldown, there's a short periodvat startup when button is high!
-                if ( (!GPIO_digitalRead(GPIOv_from_PORT_PIN(GPIO_port_C, 3))) != (!button1_state) ) {
-                    printf("if != TRUE \r\n"); // @debug
-                    if (button1_state)
-                        button1_state = BUTTON_OFF_ATLEAST * 2 + 0;
-                    else
-                        button1_state = BUTTON_ON_ATLEAST * 2 + 1;
-                }
-                if ( button1_state & 1 ) {
-                    printf("button1_state &1 TRUE : %d\r\n", button1_state); // @debug
-                    button1_state = 0;
-
-                    switch (comet_selection)    {
-                        case 0: {
-                            comet_colors_current = &comet_colors_1;
-                            comet_selection = 1;
-                            break;
-                            }
-                        case 1: {
-                            comet_colors_current = &comet_colors_0;
-                            comet_selection = 0;
-                            break;
-                            }
-                    }
-                    printf("comet_selection: %d\r\n\r\n", comet_selection); // @debug
-                }
-                // printf("button1_timer reset to BASE\r\n"); // @debug
-                button1_timer = BUTTON_TIMER_BASE;
+            // Handle Eyes.
+            thing_timer[THING_EYES]--;
+            if ( thing_timer[THING_EYES] == 0 )
+            {
+                ws_dirty = eyesHandler(0) || ws_dirty;
             }
 
-        }
-        
-    }
+            // Handle Upper Trim.
+            thing_timer[THING_UPPER_TRIM]--;
+            if ( thing_timer[THING_UPPER_TRIM] == 0 )
+            {
+                ws_dirty = upperTrimHandler(0) || ws_dirty;
+            }
 
+            // Handle Lower Trim.
+            thing_timer[THING_LOWER_TRIM]--;
+            if ( thing_timer[THING_LOWER_TRIM] == 0 )
+            {
+                ws_dirty = lowerTrimHandler(0) || ws_dirty;
+            }
+
+            // This should always be at the end, after all WS Things handlers.
+            if (ws_dirty) {
+                ws_dirty = 0;
+                WS2812_Handler();
+            }
+
+            // Handle Stars (not a WS Thing).
+            thing_timer[THING_STARS]--;
+            if ( thing_timer[THING_STARS] == 0 )
+            {
+                stars_dirty = starsHandler(0) || stars_dirty; // The or is unnecessary, but for the sake of consistency...
+            }
+
+            // This could be a part of the Stars handler, but for the sake of consistency, it's here.
+            if (stars_dirty) {
+                stars_dirty = 0;
+                starsUpdate(); // @todo.
+            }
+        }
+    }
 }

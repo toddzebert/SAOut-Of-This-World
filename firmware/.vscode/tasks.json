@@ -1,0 +1,30 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "cppbuild",
+			"label": "C/C++: riscv-none-embed-gcc.exe build active file",
+			"command": "C:/Users/todd3/.platformio/packages/toolchain-riscv/bin/riscv-none-embed-gcc.exe",
+			"args": [
+				"-fdiagnostics-color=always",
+				"-g",
+				"${file}",
+				"-o",
+				"${fileDirname}\\${fileBasenameNoExtension}.exe",
+				"-msmall-data-limit=0",
+				"-msave-restore",
+				"-march=rv32ecxw",
+				"-mabi=ilp32e",
+				""
+			],
+			"options": {
+				"cwd": "C:/Users/todd3/.platformio/packages/toolchain-riscv/bin"
+			},
+			"problemMatcher": [
+				"$gcc"
+			],
+			"group": "build",
+			"detail": "compiler: C:/Users/todd3/.platformio/packages/toolchain-riscv/bin/riscv-none-embed-gcc.exe"
+		}
+	]
+}
