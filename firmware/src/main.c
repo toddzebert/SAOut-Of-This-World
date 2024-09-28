@@ -170,6 +170,13 @@ void copyInRegReservedGlobal()
     // @todo future use?
 }
 
+/**
+ * @brief Copy the "read-only" registry values from the reserved constants to the actual registry.
+ *
+ * While it's intended to be called once at startup, it'll be called again if the registry is changed.
+ *
+ * @note This function exists since the lib doesn't support R/O registers.
+ */
 void copyInRegReservedRO()
 {
     constToRegCopy(registry, 0, reg_reserved_ro, 0, sizeof(reg_reserved_ro) * sizeof(uint8_t));
@@ -249,8 +256,10 @@ int main()
     // funDigitalWrite( PC0, FUN_HIGH ); // @debug
     // Delay_Ms( 2000 ); // @debug
 
+    // Init button1. @debug its broken since moving to fun*() usage.
+    // @debug temp: button1Init();
+
     // Init "things".
-    button1Init();
 
     // @todo All the things inits should be done more dymamicly.
     eyesHandler(1);
@@ -312,7 +321,7 @@ int main()
             thing_timer[THING_STARS]--;
             if ( thing_timer[THING_STARS] == 0 )
             {
-                stars_dirty = starsHandler(0) || stars_dirty; // The or is unnecessary, but for the sake of consistency...
+                stars_dirty = starsHandler(0) || stars_dirty; // The || is unnecessary, but for the sake of consistency...
             }
 
             // This could be a part of the Stars handler, but for the sake of consistency, it's here.

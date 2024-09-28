@@ -27,7 +27,7 @@ const uint8_t ws_comet_defaults[] = {
     0, // Comet_BG_Red_default = 0;
     0, // Comet_BG_Green_default = 0;
     255, // Comet_BG_Blue_default = 0;
-    4, // Tail length default = 4 *** factors of 2 strongly recommended to avoid division. @todo does >8 make any sense?
+    16, // Tail length default = 4 *** factors of 2 strongly recommended to avoid division. @todo does >8 make any sense?
     0, // Mode_default - 0 = fixed color, 1+ TBD.
     0, // Repeats, default 0
     0,// special?
@@ -59,9 +59,9 @@ int effect_ws_comet(Things_t thing, int flag) {
 
         // Set initial state.
         WS_Comet_state[thing].position = thing_led_count[thing] >> 2; // Start at middle.
-        WS_Comet_state[thing].direction = rnd_fun(0, 1); // @debug testing.
+        WS_Comet_state[thing].direction = rnd_fun(0, 1);
         WS_Comet_state[thing].status = 0;
-        printf("WS *init* comet state: thing %d, pos %d, dir %d, status %d\n", thing, WS_Comet_state[thing].position, WS_Comet_state[thing].direction, WS_Comet_state[thing].status); // @debug
+        // printf("WS *init* comet state: thing %d, pos %d, dir %d, status %d\n", thing, WS_Comet_state[thing].position, WS_Comet_state[thing].direction, WS_Comet_state[thing].status); // @debug
 
         // Apply background color.
         for (int i = 0; i < thing_led_count[thing]; i++)
@@ -86,7 +86,7 @@ int effect_ws_comet(Things_t thing, int flag) {
         uint8_t curr_led_g = registry[reg_thing_start[thing] + WS_Comet_Green_offset];
         uint8_t curr_led_b = registry[reg_thing_start[thing] + WS_Comet_Blue_offset];
 
-        // @todo check for unreasonable tail lengths.
+        // @todo check for unreasonable tail lengths?
 
         // Let's move the head, updating state.
         int new_head_pos = WS_Comet_state[thing].position; // Need an int in case things go negative.
@@ -159,7 +159,8 @@ int effect_ws_comet(Things_t thing, int flag) {
             // Calc new alpha.
             // A hopefully faster version of: alpha_layer_leds[curr_body_x_pos].alpha = curr_pos_in_comet * 255 / registry[reg_thing_start[thing] + WS_Comet_Tail_offset];
             uint8_t tail_len = registry[reg_thing_start[thing] + WS_Comet_Tail_offset];
-            int ab = FastMultiply(255, curr_pos_in_comet); // (big, small).
+            // Bother ops are 1's based, so we don't want the end of the tail to be 0.
+            int ab = FastMultiply(255, (tail_len - curr_pos_in_comet) + 1); // (big, small).
             // printf("ab %d, tail_len %d\n", ab, tail_len); // @debug
 
             // See if we can optimize division.
@@ -179,6 +180,7 @@ int effect_ws_comet(Things_t thing, int flag) {
             // Check for existing alpha for this position.
             if (alpha_layer_leds[curr_body_x_pos].alpha && 0) // @debug disabling truthy for now...
             {
+                // @debug ****** still broken as of 9/27 14:30 *******
                 // Get existing alpha.
                 int aa = alpha_layer_leds[curr_body_x_pos].alpha;
                 // @debug @todo **** this is causing "blinking" when comet overlaps itself. *****
@@ -233,7 +235,8 @@ int effect_ws_comet(Things_t thing, int flag) {
             // @note see also https://stackoverflow.com/questions/726549/algorithm-for-additive-color-mixing-for-rgb-values .
             uint32_t hexa = alpha_layer_leds[i].color[0] << 16 | alpha_layer_leds[i].color[1] << 8 | alpha_layer_leds[i].color[2];
             uint32_t hexb = registry[reg_thing_start[thing] + WS_Comet_BG_color_offset] << 16 | registry[reg_thing_start[thing] + WS_Comet_BG_color_offset + 1] << 8 | registry[reg_thing_start[thing] + WS_Comet_BG_color_offset + 2];
-            uint32_t hex_color = TweenHexColors(hexa, hexb, alpha_layer_leds[i].alpha);
+            // @note alpha applies to the 2nd param (hexa) in this function.
+            uint32_t hex_color = TweenHexColors(hexb, hexa, alpha_layer_leds[i].alpha);
             
             uint8_t r = (hex_color >> 16) & 0xFF;
             uint8_t g = (hex_color >> 8) & 0xFF;

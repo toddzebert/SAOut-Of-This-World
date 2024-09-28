@@ -1,6 +1,6 @@
 #include "things/eyes.h"
 
-uint16_t eyes_timer; // @todo be replaced by new array.
+// uint16_t eyes_timer; // @todo be replaced by new array.
 uint8_t eyes_effect;
 
 /**
@@ -19,7 +19,7 @@ uint8_t eyes_effect;
 int eyesHandler(int flag)
 {
     // printf("In eyesHandler, flag is: %d\r\n", flag); // @debug
-    eyes_effect = registry[REG_EYES_START] | EFFECT_WS_BLINK;
+    eyes_effect = registry[REG_EYES_START] || EFFECT_WS_BLINK;
  
     switch (eyes_effect)
     {

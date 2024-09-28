@@ -80,10 +80,14 @@ void regToRegCopy(volatile uint8_t *dest, size_t dest_offset, volatile uint8_t *
 uint8_t byteIsPowerOfTwo(uint8_t x);
 
 // Debug functions.
+
+// Ex: printNon0Reg(registry);
 void printNon0Reg(volatile uint8_t *reg);
 
+// EX: printf("Blink state: "); printBin(blink_state, 1);
 void printBin(uint8_t c, int newline);
 
+// Ex: printf("Blink state: "); printBinByRef(&Blink_state, 1);
 void printBinByRef(void *pnt0, int newline);
 
 #endif /* GLOBAL_H_ */

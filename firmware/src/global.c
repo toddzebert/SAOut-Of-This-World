@@ -90,6 +90,9 @@ void regToRegCopy(volatile uint8_t *dest, size_t dest_offset, volatile uint8_t *
     }
 }
 
+// @note Compilier attribute forces the RISC compiler to inline this function, otherwise inline is just a suggestion.
+
+__attribute__((always_inline))
 inline uint8_t byteIsPowerOfTwo(uint8_t x)
 {
     return (x != 0) && ((x & (x - 1)) == 0);

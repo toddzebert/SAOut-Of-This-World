@@ -6,7 +6,7 @@ int starsHandler(int flag)
 {
     // printf("starsHandler\n"); // @debug
 
-    stars_effect = registry[reg_thing_start[THING_STARS]] | EFFECT_TWINKLE;
+    stars_effect = registry[reg_thing_start[THING_STARS]] || EFFECT_TWINKLE;
 
     switch (stars_effect)
     {

@@ -4,8 +4,10 @@
 
 enum Blink_mode {
     Blink_Random = 1,
+    // alternate? - do at timer speed?
+    // fade in/out? - we'd have to temp change timer to get any kind of fade.
+    //    right now at 150ms, 30fps = 33.333ms, or 15fps 67.777ms. Maybe 40ms, and change overall to 160ms?
 };
-
 
 // Offsets from each "thing" base in the registry.
 // @todo these only apply to Eyes!
@@ -39,12 +41,12 @@ const uint8_t blink_defaults[11] = {
     // @note [move this comment] green is brightess, followed closely by red, then a distant blue.
 };
 
-struct {
+struct Blink_State_t {
     char left_blink : 1;
     char right_blink : 1;
-} Blink_state;
+};
 
-uint8_t r; // For random.
+struct Blink_State_t Blink_state[THING_COUNT];
 
 /**
  * @brief Blink effect.
@@ -59,11 +61,11 @@ int effect_ws_blink(Things_t thing, int flag)
     // printf("In effect_ws_blink, thing is: %u, flag is: %d\r\n", thing, flag); // @debug = 1 for Eyes, from Things_t in global.h.
     // printf("thing is: %u\n", thing); // @debug = 1 for Eyes, from Things_t in global.h.
 
-    // @todo take `thing` in account!
+    uint8_t r; // For random.
 
     if (flag == 1) { // @todo use an enum for future use?
-        Blink_state.left_blink = 0;
-        Blink_state.right_blink = 0;
+        Blink_state[thing].left_blink = 0;
+        Blink_state[thing].right_blink = 0;
         // Copy defaults to registry.
         // @debug ***** below hard coded to Eyes, but needs to be dynamic. 
         constToRegCopy(registry, REG_EYES_START, blink_defaults, 0, sizeof(blink_defaults) * sizeof(uint8_t));
@@ -75,13 +77,13 @@ int effect_ws_blink(Things_t thing, int flag)
         // @todo @future check reg mode if more than 1 option.
         
         // Left eye.
-        if (Blink_state.left_blink) {
+        if (Blink_state[thing].left_blink) {
             // printf("Left eye blinking\n"); // @debug
             // Left eye is blinking.
             // Copy left reg to reg raw.
             regToRegCopy(registry, REG_EYES_LEFT_LED_START, registry, REG_EYES_START + Blink_Left_offset, 3 * sizeof(uint8_t));
             // Clear status.
-            Blink_state.left_blink = 0;
+            Blink_state[thing].left_blink = 0;
         }
         else
         {
@@ -96,17 +98,17 @@ int effect_ws_blink(Things_t thing, int flag)
                 }
 
                 // Set status.
-                Blink_state.left_blink = 1;
+                Blink_state[thing].left_blink = 1;
             }
         }
 
         // Right eye.
-        if (Blink_state.right_blink) {
+        if (Blink_state[thing].right_blink) {
             // Right eye is blinking.
             // Copy right reg to reg raw.
             regToRegCopy(registry, REG_EYES_RIGHT_LED_START, registry, REG_EYES_START + Blink_Right_offset, 3 * sizeof(uint8_t));
             // Clear status.
-            Blink_state.right_blink = 0;
+            Blink_state[thing].right_blink = 0;
         }
         else
         {
@@ -120,14 +122,12 @@ int effect_ws_blink(Things_t thing, int flag)
                 }
 
                 // Set status.
-                Blink_state.right_blink = 1;
+                Blink_state[thing].right_blink = 1;
             }
         }
     }
 
     // Set timer.
-    // eyes_timer = registry[REG_EYES_START + Blink_Timer_offset] * 256 + registry[REG_EYES_START + Blink_Timer_offset + 1];
-    // eyes_timer = registry[REG_EYES_START + Blink_Timer_offset] * 256 + registry[REG_EYES_START + Blink_Timer_offset + 1];
     thing_timer[thing] = registry[reg_thing_start[thing] + Blink_Timer_offset] * 256 + registry[reg_thing_start[thing] + Blink_Timer_offset + 1];
     // printf("Eyes timer: %d\n", eyes_timer); // @debug
     // printf("Blink state: "); printBin(blink_state, 1); // @debug

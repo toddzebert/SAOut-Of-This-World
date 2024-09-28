@@ -95,6 +95,7 @@ uint32_t CalcWSLed(int ledno)
 
     if (registry[REG_BLUE_COMPENSATION] == 1) {
         // Let's reduce them without needing FP.
+        // @todo this needs to be revisited.
         r = (r >> 1) + (r >> 2) + (r >> 3); // 87.5%.
         g = (g >> 1) + (g >> 2) + (g >> 3);
     }
@@ -117,8 +118,6 @@ uint32_t CalcWSLed(int ledno)
 
 void WS2812_Handler()
 {
-    // @todo any prep here?
-
     // Iterate through the LEDs and then save the calculated colors.
     for (int i = 0; i < LEDS; i++)
     {
