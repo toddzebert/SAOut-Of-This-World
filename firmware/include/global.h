@@ -5,6 +5,8 @@
 
 // #pragma message ("In global.h") // @debug
 
+#define THING_COUNT 4
+
 // Things.
 typedef enum {
     THING_STARS = 0,
@@ -15,6 +17,51 @@ typedef enum {
 
 extern Things_t thing;
 
+typedef enum {
+    STATE_ACTION_INIT, // @todo needed?
+    STATE_ACTION_ENTER,
+    STATE_ACTION_GO,
+    STATE_ACTION_EXIT
+} State_Action_t;
+
+typedef enum {
+    EVENT_INIT,
+    EVENT_RUN,
+    EVENT_REG_CHANGE,
+    EVENT_BUTTON,
+} Event_Type_t;
+
+// @debug probably unneeded.
+typedef struct {
+    Event_Type_t type;
+} Event_Init_t;
+
+// @debug probably unneeded.
+typedef struct {
+    Event_Type_t type;
+} Event_Run_t;
+
+typedef struct {
+    Event_Type_t type;
+    uint8_t reg;
+    uint8_t length;
+} Event_Reg_Change_t;
+
+typedef union {
+    // Event_Init_t init;
+    // Event_Run_t run;
+    Event_Reg_Change_t reg_change;
+    // @todo button.
+} Event_Data_t;
+
+typedef struct {
+    Event_Type_t type;
+    Event_Data_t data;
+} Event_t;
+
+// @debug below is wrong - each thing and effect will have own state phase.
+// extern State_Action_t thing_state_phase[THING_COUNT];
+
 #define STARS_COUNT 5 // (white LEDs via GPIO)
 #define EYES_COUNT 2 // (WS2812B)
 #define UPPER_TRIM_COUNT 5 // (WS2812B)
@@ -22,7 +69,6 @@ extern Things_t thing;
 
 extern const uint8_t thing_led_count[];
 
-#define THING_COUNT 4
 extern uint16_t thing_timer[THING_COUNT];
 
 extern const uint8_t RGB_Black[3];

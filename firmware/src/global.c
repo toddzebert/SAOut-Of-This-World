@@ -2,6 +2,8 @@
 
 volatile uint8_t registry[140] = {0};
 
+uint16_t thing_timer[THING_COUNT] = {1, 1, 1, 1};
+
 const uint8_t thing_led_count[] = {
     STARS_COUNT,
     EYES_COUNT,

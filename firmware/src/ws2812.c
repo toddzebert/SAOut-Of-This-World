@@ -33,6 +33,7 @@ const uint8_t gamma8[]  = {
   177,180,182,184,186,189,191,193,196,198,200,203,205,208,210,213,
   215,218,220,223,225,228,231,233,236,239,241,244,247,249,252,255 };
 
+// @note [move this comment] green is brightess, followed closely by red, then a distant blue.
 const uint8_t reg_reserved_ws[] = {
     1, // gamma adjust, default 1
     1, // blue compensation, default 1

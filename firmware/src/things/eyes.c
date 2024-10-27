@@ -3,6 +3,8 @@
 // uint16_t eyes_timer; // @todo be replaced by new array.
 uint8_t eyes_effect;
 
+State_Action_t eyes_state_phase;
+
 /**
  * @brief Handler for the eyes thing.
  *
@@ -16,19 +18,24 @@ uint8_t eyes_effect;
  * @return The return value of the effect function. The meaning of the return
  *         value depends on the effect function.
  */
-int eyesHandler(int flag)
+int eyesHandler(Event_t event) // was int flag
 {
-    // printf("In eyesHandler, flag is: %d\r\n", flag); // @debug
-    eyes_effect = registry[REG_EYES_START] || EFFECT_WS_BLINK;
- 
+    printf("In eyesHandler, event.type: %d\r\n", event.type); // @debug
+    // printf("In eyesHandler, registry[REG_EYES_START]: %d\r\n", registry[REG_EYES_START]); // @debug
+    eyes_effect = registry[REG_EYES_START];
+    if (eyes_effect == 0) eyes_effect = EFFECT_WS_BLINK;
+    // printf("In eyesHandler, eyes_effect: %d\r\n", eyes_effect); // @debug
+    // @todo in things we can probably ignore a thing state_action.
+
     switch (eyes_effect)
     {
     case EFFECT_RAW:
-        return effect_raw(THING_EYES, flag);
+        // @todo after all other effects updated.
+        // return effect_raw(THING_EYES, flag);
         break;
 
     case EFFECT_WS_BLINK:
-        return effect_ws_blink(THING_EYES, flag);
+        return effect_ws_blink(THING_EYES, event);
         break;
     
     default:

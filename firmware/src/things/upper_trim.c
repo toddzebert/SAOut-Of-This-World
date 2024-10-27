@@ -6,12 +6,13 @@ int upperTrimHandler(int flag)
 {
     // printf("upperTrimHandler\n"); // @debug
 
-    upper_trim_effect = registry[reg_thing_start[THING_UPPER_TRIM]] || EFFECT_WS_COMET;
+    upper_trim_effect = registry[reg_thing_start[THING_UPPER_TRIM]];
+    if (!upper_trim_effect) upper_trim_effect = EFFECT_WS_COMET;
 
     switch (upper_trim_effect)
     {
     case EFFECT_RAW:
-        return effect_raw(THING_UPPER_TRIM, flag);
+        // @todo return effect_raw(THING_UPPER_TRIM, event);
         break;
 
     case EFFECT_WS_COMET:

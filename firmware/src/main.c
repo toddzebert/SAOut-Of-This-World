@@ -196,6 +196,7 @@ void onI2cWrite(uint8_t reg, uint8_t length) {
     // Check protected "RO" registers and replace with our settings.
     // @debug untested.
     if (reg < REG_RESERVED_RO_LENGTH) copyInRegReservedRO();
+    // @todo issue reg event.
 }
 
 
@@ -253,6 +254,8 @@ int main()
 
     copyInRegReservedGlobal();
 
+    // printNon0Reg(registry); // @debug
+
     // funDigitalWrite( PC0, FUN_HIGH ); // @debug
     // Delay_Ms( 2000 ); // @debug
 
@@ -262,10 +265,13 @@ int main()
     // Init "things".
 
     // @todo All the things inits should be done more dymamicly.
-    eyesHandler(1);
-    starsHandler(1);
-    upperTrimHandler(1);
-    lowerTrimHandler(1);
+    Event_t event_init;
+    event_init.type = EVENT_INIT;
+    eyesHandler(event_init); // @todo update.
+    // @todo update and fix below.
+    // starsHandler(1);
+    // upperTrimHandler(1);
+    // lowerTrimHandler(1);
 
     // WS2812 init and initial "start" to render. Must go after all "things" inits, ...Handler(1)'s.
     WS2812_Init();
@@ -279,9 +285,15 @@ int main()
     int ws_dirty = 0;
     int stars_dirty = 0;
 
+    Event_t event_run;
+    event_run.type = EVENT_RUN;
+
+    // printf("In main, thing_timer[THING_EYES]: %d\n", thing_timer[THING_EYES]); // @debug
+    printf("In main, right before loop.\n"); // @debug
+
     while(1)
     {
-        // @todo button(s) occasional polling and debounce here.
+        // @todo button(s) occasional polling and debounce here, and create event.
 
         if (timer_tick) {
             timer_tick = 0;
@@ -294,9 +306,12 @@ int main()
             thing_timer[THING_EYES]--;
             if ( thing_timer[THING_EYES] == 0 )
             {
-                ws_dirty = eyesHandler(0) || ws_dirty;
+                // printf("In main, thing_timer[THING_EYES] == 0.\n"); // @debug
+                ws_dirty = eyesHandler(event_run) || ws_dirty;
             }
 
+            // @todo update and fix below.
+/*
             // Handle Upper Trim.
             thing_timer[THING_UPPER_TRIM]--;
             if ( thing_timer[THING_UPPER_TRIM] == 0 )
@@ -310,7 +325,7 @@ int main()
             {
                 ws_dirty = lowerTrimHandler(0) || ws_dirty;
             }
-
+*/
             // This should always be at the end, after all WS Things handlers.
             if (ws_dirty) {
                 ws_dirty = 0;

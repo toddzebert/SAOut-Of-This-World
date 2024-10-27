@@ -6,7 +6,8 @@ int lowerTrimHandler(int flag)
 {
     // printf("lowerTrimHandler\n"); // @debug
 
-    lower_trim_effect = registry[reg_thing_start[THING_LOWER_TRIM]] || EFFECT_WS_COMET;
+    lower_trim_effect = registry[reg_thing_start[THING_LOWER_TRIM]];
+    if (!lower_trim_effect) lower_trim_effect = EFFECT_WS_COMET;
 
     switch (lower_trim_effect)
     {
