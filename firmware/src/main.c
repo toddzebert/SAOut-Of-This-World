@@ -247,8 +247,7 @@ int main()
     // Must be below init_i2c().
     init_gpio();
 
-    // Let things settle.
-    Delay_Ms( 200 );
+    Delay_Ms( 200 ); // Let things settle.
 
     copyInRegReservedRO();
 
@@ -257,7 +256,7 @@ int main()
     // printNon0Reg(registry); // @debug
 
     // funDigitalWrite( PC0, FUN_HIGH ); // @debug
-    // Delay_Ms( 2000 ); // @debug
+    Delay_Ms( 200 ); // Let things settle.
 
     // Init button1. @debug its broken since moving to fun*() usage.
     // @debug temp: button1Init();
@@ -267,7 +266,7 @@ int main()
     // @todo All the things inits should be done more dymamicly.
     Event_t event_init;
     event_init.type = EVENT_INIT;
-    eyesHandler(event_init); // @todo update.
+    eyesHandler(event_init);
     // @todo update and fix below.
     // starsHandler(1);
     // upperTrimHandler(1);
@@ -279,7 +278,7 @@ int main()
     init_timer();
 
     // Let things settle.
-    Delay_Ms( 100 );
+    Delay_Ms( 200 );
 
     // Prep for main loop.
     int ws_dirty = 0;

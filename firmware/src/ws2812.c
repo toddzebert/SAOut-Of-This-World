@@ -9,6 +9,10 @@
 
 #include <ws2812b_dma_spi_led_driver.h>
 
+// @todo perhaps reviewe ws_blink and ws_comet and DRY out some of the alpha code and include it here?
+// #include <rand.h>
+// #include <color_utilities.h>
+
 /*
 WS2812B:
     Send data at speeds of 800Kbps.
