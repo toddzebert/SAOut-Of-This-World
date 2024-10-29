@@ -25,9 +25,9 @@
 | SCL     | SCL        |  9  | PC2                      |
 | PC3     | Button1    | 10  |                          |
 | PC4     | Button2    | 11  |                          |
-|         | TBD?       | 12  |                          |
+|         | N/C        | 12  |                          |
 | MOSI    | Neopixel   | 13  | PC6                      |
-| T1CH2_  | N/C, timer | 14  | PC7                      |
+|         | N/C        | 14  | PC7                      |
 | SWIO    | SWIO       | 15  | PD1, Programer, exp. pad |
 | PD2     | SenseLED2- | 16  |                          |
 | PD3     | SenseLED2+ | 17  |                          |
@@ -35,3 +35,8 @@
 | UTX     | UTX        | 19  | PD5, USART, exposed pad  |
 | URX     | URX        | 20  | PD6, USART, exposed pad  |
 | VSS     | GND        | 21  |                          |
+
+
+## Thanks.
+Special thanks to cnlohr for the [ch32v003fun](https://github.com/cnlohr/ch32v003fun) project,
+and all the helpful people on his Discord server.

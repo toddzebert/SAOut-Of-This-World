@@ -75,96 +75,27 @@ const uint8_t reg_reserved_ro[REG_RESERVED_RO_LENGTH] = {
     // @todo more?
 };
 
-// @todo take gamma into account
-// https://hackaday.com/2016/08/23/rgb-leds-how-to-master-gamma-and-hue-for-perfect-brightness/ .
-
-
-/**
- * @brief Initializes the timer for the 1ms tick.
- *
- * The settings used are:
- * - TIM1 is enabled and used.
- * - The counter mode is Up-Counter.
- * - The clock division is 1.
- * - The master mode is set to Update.
- * - The Auto-Reload value is set to 10 (1ms).
- * - The Prescaler is set to 48000.
- * - The Recurring Count Value is set to 0.
- * - The Event Generation is set to Immediate.
- * - The interrupt is enabled and the flag is cleared.
- * - The DMA/Interrupt enable register is set to Update.
- * - The Counter Enable bit is set.
- * 
- * Adapated from https://github.com/cnlohr/ch32v003fun/blob/master/examples/adc_fixed_fs/adc_fixed_fs.c .
- * TIM1C1 uses PD2.
- */
-void _init_timer() {
-    // @todo change to use TIM2? Would also change ISR name.
-    RCC->APB2PCENR |= RCC_APB2Periph_TIM1; // > APB2 peripheral clock enable register.
-    // @todo why both TIM1CH1 and ...CH2?
-    TIM1->CTLR1 |= TIM_CounterMode_Up | TIM_CKD_DIV1;
-    TIM1->CTLR2 = TIM_MMS_1;
-    
-    TIM1->ATRLR = SOTW_ATRLR-1; // > Auto-reload value register; the counter stops when ATRLR is empty.
-    TIM1->PSC = SOTW_PSC-1; // > Counting clock prescaler.
-    TIM1->RPTCR = 0; // > Recurring count value register.
-    TIM1->SWEVGR = TIM_PSCReloadMode_Immediate; // > Event generation register.
-
-    NVIC_EnableIRQ(TIM1_UP_IRQn); // (TIM1 Update Interrupt)
-    TIM1->INTFR = ~TIM_FLAG_Update; // > Interrupt status register. 
-    TIM1->DMAINTENR |= TIM_IT_Update; // > DMA/interrupt enable register.
-    TIM1->CTLR1 |= TIM_CEN;
-}
-
-/*
-    to fix this, from chat
-    > Pin 12 (pc5) has t1ch3 muxed, pin 14 (pc7) has t1ch2 muxed, so either should be fine by just changing the used channel
-    You will need to remap it though
-    > Just set AFIO->PCFR1 |= AFIO_PCFR1_TIM1_REMAP_0; for T1CH2 on PC7, or AFIO->PCFR1 |= AFIO_PCFR1_TIM1_REMAP_0 | AFIO_PCFR1_TIM1_REMAP_1; for T1CH3 on PC5
-    > RCC->APB2PCENR |= RCC_AFIOEN;
-*/
-void init_timer()
+void systick_init(void)
 {
-    RCC->APB2PCENR |= RCC_AFIOEN; // Alt. Function IO peripheral clock enable register.
-
-}
-
-// Both adapted from https://github.com/cnlohr/ch32v003fun/blob/master/examples/adc_fixed_fs/adc_fixed_fs.c .
-void TIM1_UP_IRQHandler(void) __attribute__((interrupt));
-/**
- * @brief Interrupt handler for the TIM1 Update Interrupt.
- *
- * This function is called whenever the TIM1 counter has reached its
- * Auto-Reload value and the counter has been reloaded with the value
- * of the Auto-Reload register.
- *
- * The interrupt flag is reset by writing the opposite value of the flag
- * into the Interrupt Status Register.
- */
-/*
-void TIM1_UP_IRQHandler() {
-    timer_tick = 1;
-
-    // Reset the timer interrupt flag.
-    if(TIM1->INTFR & TIM_FLAG_Update) {
-        TIM1->INTFR = ~TIM_FLAG_Update;
-    }
-}
-*/
-
-static void systick_init()
-{
-	// enable the SysTick IRQ
-	NVIC_EnableIRQ(SysTicK_IRQn);
+    // See https://github.com/cnlohr/ch32v003fun/blob/master/examples/systick_irq/systick_irq.c .
+	// Reset any pre-existing configuration
+	SysTick->CTLR = 0x0000;
 	
-	// Enable SysTick counter, IRQ, HCLK/1
-	SysTick->CTLR = SYSTICK_CTLR_STE | SYSTICK_CTLR_STIE |
-					SYSTICK_CTLR_STCLK;
+	// Set the compare register to trigger once per millisecond
+	SysTick->CMP = SYSTICK_ONE_MILLISECOND - 1;
 
-	// Set the tick interval to 1ms for normal op
-	SysTick->CMP = SysTick->CNT + SYSTICK_INTERVAL;
-
-    printf("finished systick init\n\r"); // @debug
+	// Reset the Count Register.
+	SysTick->CNT = 0x00000000;
+	
+	// Set the SysTick Configuration
+	// NOTE: By not setting SYSTICK_CTLR_STRE, we maintain compatibility with
+	// busywait delay funtions used by ch32v003_fun.
+	SysTick->CTLR |= SYSTICK_CTLR_STE   |  // Enable Counter
+	                 SYSTICK_CTLR_STIE  |  // Enable Interrupts
+	                 SYSTICK_CTLR_STCLK ;  // Set Clock Source to HCLK/1
+	
+	// Enable the SysTick IRQ
+	NVIC_EnableIRQ(SysTicK_IRQn);
 }
 
 void SysTick_Handler(void) __attribute__((interrupt));
@@ -172,10 +103,11 @@ void SysTick_Handler(void)
 {
     timer_tick = 1;
 
-    // Reset the SysTick compare register.
-    SysTick->CMP = SysTick->CMP + SYSTICK_INTERVAL;
+    // Set the compare register to trigger once per millisecond
+    SysTick->CMP += SYSTICK_ONE_MILLISECOND;
 
-    // printf("finished systick handler\n\r"); // @debug
+	// Clear the trigger state for the next IRQ
+	SysTick->SR = 0x00000000;
 }
 
 // Init non-i2c GPIO.
@@ -340,20 +272,18 @@ int main()
     Event_t event_run;
     event_run.type = EVENT_RUN;
 
-    systick_init(); // @debug testing.
+    systick_init();
 
     // printf("In main, thing_timer[THING_EYES]: %d\n", thing_timer[THING_EYES]); // @debug
     printf("In main, right before loop.\n"); // @debug
 
     while(1)
     {
-        // printf("in main loop.\n"); // @debug
         // @todo button(s) occasional polling and debounce here, and create event.
 
-        if (timer_tick) {
+        if (timer_tick)
+        {
             timer_tick = 0;
-            printf("In main, timer_tick.\n"); // @debug
-
             // Handle button1.
             button1_timer--;
             if ( button1_timer == 0 ) button1Handler();
