@@ -30,13 +30,10 @@ int eyesHandler(Event_t event) // was int flag
     switch (eyes_effect)
     {
     case EFFECT_RAW:
-        // @todo after all other effects updated.
-        // return effect_raw(THING_EYES, flag);
-        break;
+        return effect_raw(THING_EYES, event);
 
     case EFFECT_WS_BLINK:
         return effect_ws_blink(THING_EYES, event);
-        break;
     
     default:
         // @todo what to do if given invalid effect?

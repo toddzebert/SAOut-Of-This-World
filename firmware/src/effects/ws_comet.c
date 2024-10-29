@@ -20,14 +20,14 @@
 const uint8_t ws_comet_defaults[] = {
     EFFECT_WS_COMET,
     1, // Timer_default_H = 0;
-    0, // Timer_default_L = TBD;
+    100, // Timer_default_L = TBD;
     255, // Comet_Red_default = 255;
     0, // Comet_Green_default = 0;
     0, // Comet_Blue_default = 0;
     0, // Comet_BG_Red_default = 0;
     0, // Comet_BG_Green_default = 0;
-    255, // Comet_BG_Blue_default = 0;
-    16, // Tail length default = 4 *** factors of 2 strongly recommended to avoid division. @todo does >8 make any sense?
+    0, // Comet_BG_Blue_default = 0;
+    4, // Tail length default = 4 *** factors of 2 strongly recommended to avoid division. @todo does >8 make any sense?
     0, // Mode_default - 0 = fixed color, 1+ TBD.
     0, // Repeats, default 0
     0,// special?
@@ -48,15 +48,45 @@ struct Alpha_Layer_LED_t {
     uint8_t mask;
 };
 
+int effect_ws_comet_run(Things_t thing, Event_t event);
 
-int effect_ws_comet(Things_t thing, int flag) {
+int effect_ws_comet(Things_t thing, Event_t event)
+{
+    switch (event.type)
+    {
+        case EVENT_INIT:
+            // Copy defaults to registry.
+            constToRegCopy(registry, reg_thing_start[thing], ws_comet_defaults, 0, sizeof(ws_comet_defaults) * sizeof(uint8_t));
+
+            state_action[thing] = STATE_ACTION_ENTER;
+            thing_timer[thing] = 10; // Get this moving to Run soon.
+            // printNon0Reg(registry); // @debug
+
+            return 0;
+
+        case EVENT_RUN:
+            switch (registry[reg_thing_start[thing] + WS_Comet_Mode_offset])
+            {
+                
+            }
+            return effect_ws_comet_run(thing, event);
+
+        case EVENT_REG_CHANGE:
+            // @todo
+        default:
+            return 0;
+    }
+}
+
+
+int effect_ws_comet_run(Things_t thing, Event_t event)
+{
     // This stays inside so it's not static!
+    // @note Set to lower trim as it has the most and excess won't matter.
     struct Alpha_Layer_LED_t alpha_layer_leds[LOWER_TRIM_COUNT] = {}; // Largest Thing size.
 
-    if (flag == 1) {
-        // Copy defaults to registry.
-        constToRegCopy(registry, reg_thing_start[thing], ws_comet_defaults, 0, sizeof(ws_comet_defaults) * sizeof(uint8_t));
-
+    if (state_action[thing] == STATE_ACTION_ENTER)
+    {
         // Set initial state.
         WS_Comet_state[thing].position = thing_led_count[thing] >> 2; // Start at middle.
         WS_Comet_state[thing].direction = rnd_fun(0, 1);
@@ -72,66 +102,70 @@ int effect_ws_comet(Things_t thing, int flag) {
             }
         }
 
-        // @todo ?
+        state_action[thing] = STATE_ACTION_GO;
+        thing_timer[thing] = 10; // Come back soon.
+
+        return 1; // Dirty.
     }
-    else
+    
+    // Assuming STATE_ACTION_GO.
+    // printf("WS comet state: thing %d, pos %d, dir %d, status %d\n", thing, WS_Comet_state[thing].position, WS_Comet_state[thing].direction, WS_Comet_state[thing].status); // @debug
+
+    // @todo future case on mode, but assume 0 for now.
+
+    // Get comet colors handy.
+    // @note "curr" is leftover from earlier code, but may mean something with "mode".
+    uint8_t curr_led_r = registry[reg_thing_start[thing] + WS_Comet_Red_offset];
+    uint8_t curr_led_g = registry[reg_thing_start[thing] + WS_Comet_Green_offset];
+    uint8_t curr_led_b = registry[reg_thing_start[thing] + WS_Comet_Blue_offset];
+
+    // @todo check for unreasonable tail lengths?
+
+    // Let's move the head, updating state.
+    int new_head_pos = WS_Comet_state[thing].position; // Need an int in case things go negative.
+    new_head_pos += WS_Comet_state[thing].direction ? 1 : -1;
+
+    // Check bounds, and bounce if needed, while updating state.
+    if (new_head_pos < 0)
     {
-        // printf("WS comet state: thing %d, pos %d, dir %d, status %d\n", thing, WS_Comet_state[thing].position, WS_Comet_state[thing].direction, WS_Comet_state[thing].status); // @debug
+        new_head_pos = 0;
+        WS_Comet_state[thing].direction = !WS_Comet_state[thing].direction;
+    }
+    else if (new_head_pos >= thing_led_count[thing])
+    {
+        new_head_pos = thing_led_count[thing] - 1;
+        WS_Comet_state[thing].direction = !WS_Comet_state[thing].direction;
+    }
 
-        // @todo future case on mode, but assume 0 for now.
+    // Save new_head_pos.
+    WS_Comet_state[thing].position = new_head_pos;
 
-        // Get comet colors handy.
-        // @note "curr" is leftover from earlier code, but may mean something with "mode".
-        uint8_t curr_led_r = registry[reg_thing_start[thing] + WS_Comet_Red_offset];
-        uint8_t curr_led_g = registry[reg_thing_start[thing] + WS_Comet_Green_offset];
-        uint8_t curr_led_b = registry[reg_thing_start[thing] + WS_Comet_Blue_offset];
+    // printf("WS comet thing %d, new head x-pos %d, new head dir %d\n", thing, WS_Comet_state[thing].position, WS_Comet_state[thing].direction); // @debug
 
-        // @todo check for unreasonable tail lengths?
+    // Start at comet head. "X" as in on an axis (Vs Y, etc).
+    int curr_pos_in_comet = 1;
+    int curr_body_x_pos = WS_Comet_state[thing].position;
+    // Negate so cursor runs opposite of head direction to tail.
+    uint8_t cursor_direction = !WS_Comet_state[thing].direction;
 
-        // Let's move the head, updating state.
-        int new_head_pos = WS_Comet_state[thing].position; // Need an int in case things go negative.
-        new_head_pos += WS_Comet_state[thing].direction ? 1 : -1;
-
-        // Check bounds, and bounce if needed, while updating state.
-        if (new_head_pos < 0) {
-            new_head_pos = 0;
-            WS_Comet_state[thing].direction = !WS_Comet_state[thing].direction;
-        }
-        else if (new_head_pos >= thing_led_count[thing]) {
-            new_head_pos = thing_led_count[thing] - 1;
-            WS_Comet_state[thing].direction = !WS_Comet_state[thing].direction;
-        }
-
-        // Save new_head_pos.
-        WS_Comet_state[thing].position = new_head_pos;
-
-        // printf("WS comet thing %d, new head x-pos %d, new head dir %d\n", thing, WS_Comet_state[thing].position, WS_Comet_state[thing].direction); // @debug
-
-        // Start at comet head. "X" as in on an axis (Vs Y, etc).
-        int curr_pos_in_comet = 1;
-        int curr_body_x_pos = WS_Comet_state[thing].position;
-        // Negate so cursor runs opposite of head direction to tail.
-        uint8_t cursor_direction = !WS_Comet_state[thing].direction;
-
-        // Iterate from head to tail to find tail pos.
-        while (curr_pos_in_comet <= registry[reg_thing_start[thing] + WS_Comet_Tail_offset])
+    // Iterate from head to tail to find tail pos.
+    while (curr_pos_in_comet <= registry[reg_thing_start[thing] + WS_Comet_Tail_offset])
+    {
+        // Figure out next body position.
+        curr_body_x_pos += cursor_direction ? 1 : -1;
+        // Respect bounds of Thing.
+        if (curr_body_x_pos < 0)
         {
-            // Figure out next body position.
-            curr_body_x_pos += cursor_direction ? 1 : -1;
-            // Respect bounds of Thing.
-            if (curr_body_x_pos < 0)
-            {
-                curr_body_x_pos = 0;
-                cursor_direction = !cursor_direction;
-            }
-            else if (curr_body_x_pos >= thing_led_count[thing])
-            {
-                curr_body_x_pos = thing_led_count[thing] - 1;
-                cursor_direction = !cursor_direction;
-            }
-
-            curr_pos_in_comet++;
+            curr_body_x_pos = 0;
+            cursor_direction = !cursor_direction;
         }
+        else if (curr_body_x_pos >= thing_led_count[thing])
+        {
+            curr_body_x_pos = thing_led_count[thing] - 1;
+            cursor_direction = !cursor_direction;
+        }
+
+        curr_pos_in_comet++;
 
         // @note Now we know the position and direction of the tail:
         // tail_direction = !cursor_direction; tail_position = curr_body_pos;

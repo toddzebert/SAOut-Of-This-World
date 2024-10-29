@@ -120,17 +120,12 @@ void init_gpio() {
     {
         funPinMode(stars_gpio_h_pins[i], GPIO_Speed_10MHz | GPIO_CNF_OUT_PP );
     }
-
+    
     // These are the Sense (star) LEDs.
     for (int i = 0; i < STARS_GPIO_L_PINS_NUM; i++)
     {
-        funPinMode(stars_gpio_l_pins[i], GPIO_CFGLR_IN_PUPD /* | @todo PD??? */ );
-    }
-
-    // @debug as I recall, to do pulldown, write low.
-    for (int i = 0; i < STARS_GPIO_L_PINS_NUM; i++)
-    {
-        funDigitalWrite(stars_gpio_l_pins[i], FUN_LOW);
+        funPinMode(stars_gpio_l_pins[i], GPIO_Speed_10MHz | GPIO_CNF_OUT_PP );
+        funDigitalWrite( stars_gpio_h_pins[i], FUN_LOW );
     }
 }
 
@@ -253,9 +248,8 @@ int main()
     event_init.type = EVENT_INIT;
     eyesHandler(event_init);
     starsHandler(event_init);
-    // @todo update and fix below.
-    // upperTrimHandler(1);
-    // lowerTrimHandler(1);
+    upperTrimHandler(event_init);
+    lowerTrimHandler(event_init);
 
     // WS2812 init and initial "start" to render. Must go after all "things" inits, ...Handler(1)'s.
     WS2812_Init();
@@ -296,22 +290,20 @@ int main()
                 ws_dirty = eyesHandler(event_run) || ws_dirty;
             }
 
-            // @todo update and fix below.
-/*
             // Handle Upper Trim.
             thing_timer[THING_UPPER_TRIM]--;
             if ( thing_timer[THING_UPPER_TRIM] == 0 )
             {
-                ws_dirty = upperTrimHandler(0) || ws_dirty;
+                ws_dirty = upperTrimHandler(event_run) || ws_dirty;
             }
 
             // Handle Lower Trim.
             thing_timer[THING_LOWER_TRIM]--;
             if ( thing_timer[THING_LOWER_TRIM] == 0 )
             {
-                ws_dirty = lowerTrimHandler(0) || ws_dirty;
+                ws_dirty = lowerTrimHandler(event_run) || ws_dirty;
             }
-*/
+            
             // This should always be at the end, after all WS Things handlers.
             if (ws_dirty) {
                 ws_dirty = 0;

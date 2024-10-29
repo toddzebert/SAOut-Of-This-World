@@ -2,7 +2,7 @@
 
 uint8_t lower_trim_effect;
 
-int lowerTrimHandler(int flag)
+int lowerTrimHandler(Event_t event)
 {
     // printf("lowerTrimHandler\n"); // @debug
 
@@ -12,12 +12,13 @@ int lowerTrimHandler(int flag)
     switch (lower_trim_effect)
     {
     case EFFECT_RAW:
-        return effect_raw(THING_LOWER_TRIM, flag);
-        break;
+        return effect_raw(THING_LOWER_TRIM, event);
 
     case EFFECT_WS_COMET:
-        return effect_ws_comet(THING_LOWER_TRIM, flag);
-        break;
+        return effect_ws_comet(THING_LOWER_TRIM, event);
+
+    case EFFECT_WS_ROTATE:
+        // return effect_ws_rotate(THING_UPPER_TRIM, event);
     
     default:
         // @todo what to do if given invalid effect?

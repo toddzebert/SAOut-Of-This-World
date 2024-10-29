@@ -9,9 +9,9 @@
 const uint8_t twinkle_defaults[5] = {
     EFFECT_TWINKLE,
     0, // Twinkle_Timer_default_H = 0;
-    75, // Twinkle_Timer_default_L = 150; // @debug testing.
+    25, // Twinkle_Timer_default_L = 150; // @debug testing.
     1, // Twinkle_Mode_default - 1 = Random, 1+ TBD, make Enum?
-    128, // Twinkle_Frequency_default, out of 255
+    32, // Twinkle_Frequency_default, out of 255
 };
 
 uint8_t Twinkle_state = 0;

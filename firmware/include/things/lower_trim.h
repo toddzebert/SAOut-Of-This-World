@@ -11,6 +11,6 @@ extern const uint8_t reg_thing_start[THING_COUNT];
 
 extern uint8_t lower_trim_effect;
 
-int lowerTrimHandler(int flag);
+int lowerTrimHandler(Event_t event);
 
 #endif /* LOWER_TRIM_H_ */

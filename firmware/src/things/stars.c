@@ -12,12 +12,10 @@ int starsHandler(Event_t event)
     switch (stars_effect)
     {
     case EFFECT_RAW:
-        // @todo return effect_raw(THING_STARS, flag);
-        break;
+        return effect_raw(THING_STARS, event);
 
     case EFFECT_TWINKLE:
         return effect_twinkle(THING_STARS, event);
-        break;
     
     default:
         // @todo what to do if given invalid effect?

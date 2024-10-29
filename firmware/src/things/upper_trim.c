@@ -2,7 +2,7 @@
 
 uint8_t upper_trim_effect;
 
-int upperTrimHandler(int flag)
+int upperTrimHandler(Event_t event)
 {
     // printf("upperTrimHandler\n"); // @debug
 
@@ -12,12 +12,13 @@ int upperTrimHandler(int flag)
     switch (upper_trim_effect)
     {
     case EFFECT_RAW:
-        // @todo return effect_raw(THING_UPPER_TRIM, event);
-        break;
+        return effect_raw(THING_UPPER_TRIM, event);
 
     case EFFECT_WS_COMET:
-        return effect_ws_comet(THING_UPPER_TRIM, flag);
-        break;
+        return effect_ws_comet(THING_UPPER_TRIM, event);
+
+    case EFFECT_WS_ROTATE:
+        // return effect_ws_rotate(THING_UPPER_TRIM, event);
     
     default:
         // @todo what to do if given invalid effect?

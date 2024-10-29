@@ -63,9 +63,6 @@ typedef struct {
     Event_Data_t data;
 } Event_t;
 
-// @debug below is wrong - each thing and effect will have own state phase.
-// extern State_Action_t thing_state_phase[THING_COUNT];
-
 #define STARS_COUNT 5 // (white LEDs via GPIO)
 #define EYES_COUNT 2 // (WS2812B)
 #define UPPER_TRIM_COUNT 5 // (WS2812B)
@@ -86,6 +83,7 @@ extern const uint8_t RGB_Black[3];
 #define EFFECT_WS_COMET 2
 #define EFFECT_WS_BLINK 3
 #define EFFECT_TWINKLE 4
+#define EFFECT_WS_ROTATE 5
 // @todo more...
 
 // Registry.
