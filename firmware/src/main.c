@@ -17,7 +17,7 @@
     6 = -40℃～85℃ (industrial-grade) 
 
     From ws2812b_dma_spi_led_driver.h:
-        For the CH32V003 this means output will be on PORTC Pin 6
+        For the CH32V003 this means output will be on PORTC Pin 6 (MOSI)
         void DMA1_Channel3_IRQHandler( void );
 
     From i2c_slave.h:
@@ -33,15 +33,17 @@
         PC3 - TBD
         PC4 - TBD
 
-    LED(s):
-        // PC0 = 32 (@debug for now) - did not work! AKA TIM2CH3 (interrupt)
-        // PD7 = 55 (@debug for now) - did not work! AKA NRST (reset/bootloader related), TIM2C4 (interrupt)  
-        PD2 = 50 (@debug for now)
-        PD3 = 51 (@debug for now)
-        PD4 = 52 (@debug for now)
+    GLEDs:
+        PC0
+        PD0
+        PA2
+
+    Sense LEDs:
+        PA1 (+), PD4 (-)
+        PD3 (+), PD2 (-)
     
     For UART printf, on:
-		CH32V003, Port D5, 115200 8n1
+		CH32V003, Port PD5 (UTX, plus PD6/URX), 115200 8n1
 */
 
 /*
@@ -51,15 +53,13 @@ The I2C (inter-IC) bus can transfer data at different speeds, including:
     Fast mode plus: 1 Mbit/s 
     High-speed mode: 3.4 Mbit/s 
     Ultra-fast mode: 5 Mbit/s 
-
-
 */
 
 #include "main.h"
 
 // Stars GPIO pins.
-// @debug PC0 (32), PD7 (55) did not work for unknown reasons.
-const uint8_t stars_gpio_pins[STARS_GPIO_PINS_NUM] = { 50, 51, 52 };
+const uint8_t stars_gpio_h_pins[STARS_GPIO_H_PINS_NUM] = { PC0, PD0, PA2, PA1, PD3 };
+const uint8_t stars_gpio_l_pins[STARS_GPIO_H_PINS_NUM] = { PD4, PD2 };
 
 volatile uint8_t timer_tick = 0;
 
@@ -98,12 +98,12 @@ const uint8_t reg_reserved_ro[REG_RESERVED_RO_LENGTH] = {
  * Adapated from https://github.com/cnlohr/ch32v003fun/blob/master/examples/adc_fixed_fs/adc_fixed_fs.c .
  * TIM1C1 uses PD2.
  */
-void init_timer() {
+void _init_timer() {
     // @todo change to use TIM2? Would also change ISR name.
     RCC->APB2PCENR |= RCC_APB2Periph_TIM1; // > APB2 peripheral clock enable register.
     // @todo why both TIM1CH1 and ...CH2?
     TIM1->CTLR1 |= TIM_CounterMode_Up | TIM_CKD_DIV1;
-    TIM1->CTLR2 = TIM_MMS_1; // @debug CAN WE DO WITHOUT THIS?
+    TIM1->CTLR2 = TIM_MMS_1;
     
     TIM1->ATRLR = SOTW_ATRLR-1; // > Auto-reload value register; the counter stops when ATRLR is empty.
     TIM1->PSC = SOTW_PSC-1; // > Counting clock prescaler.
@@ -114,6 +114,19 @@ void init_timer() {
     TIM1->INTFR = ~TIM_FLAG_Update; // > Interrupt status register. 
     TIM1->DMAINTENR |= TIM_IT_Update; // > DMA/interrupt enable register.
     TIM1->CTLR1 |= TIM_CEN;
+}
+
+/*
+    to fix this, from chat
+    > Pin 12 (pc5) has t1ch3 muxed, pin 14 (pc7) has t1ch2 muxed, so either should be fine by just changing the used channel
+    You will need to remap it though
+    > Just set AFIO->PCFR1 |= AFIO_PCFR1_TIM1_REMAP_0; for T1CH2 on PC7, or AFIO->PCFR1 |= AFIO_PCFR1_TIM1_REMAP_0 | AFIO_PCFR1_TIM1_REMAP_1; for T1CH3 on PC5
+    > RCC->APB2PCENR |= RCC_AFIOEN;
+*/
+void init_timer()
+{
+    RCC->APB2PCENR |= RCC_AFIOEN; // Alt. Function IO peripheral clock enable register.
+
 }
 
 // Both adapted from https://github.com/cnlohr/ch32v003fun/blob/master/examples/adc_fixed_fs/adc_fixed_fs.c .
@@ -128,6 +141,7 @@ void TIM1_UP_IRQHandler(void) __attribute__((interrupt));
  * The interrupt flag is reset by writing the opposite value of the flag
  * into the Interrupt Status Register.
  */
+/*
 void TIM1_UP_IRQHandler() {
     timer_tick = 1;
 
@@ -136,7 +150,33 @@ void TIM1_UP_IRQHandler() {
         TIM1->INTFR = ~TIM_FLAG_Update;
     }
 }
+*/
 
+static void systick_init()
+{
+	// enable the SysTick IRQ
+	NVIC_EnableIRQ(SysTicK_IRQn);
+	
+	// Enable SysTick counter, IRQ, HCLK/1
+	SysTick->CTLR = SYSTICK_CTLR_STE | SYSTICK_CTLR_STIE |
+					SYSTICK_CTLR_STCLK;
+
+	// Set the tick interval to 1ms for normal op
+	SysTick->CMP = SysTick->CNT + SYSTICK_INTERVAL;
+
+    printf("finished systick init\n\r"); // @debug
+}
+
+void SysTick_Handler(void) __attribute__((interrupt));
+void SysTick_Handler(void)
+{
+    timer_tick = 1;
+
+    // Reset the SysTick compare register.
+    SysTick->CMP = SysTick->CMP + SYSTICK_INTERVAL;
+
+    // printf("finished systick handler\n\r"); // @debug
+}
 
 // Init non-i2c GPIO.
 void init_gpio() {
@@ -144,23 +184,37 @@ void init_gpio() {
     // ... so place this below the i2c init.
 
     // Stars LEDs.
-    for (int i = 0; i < STARS_GPIO_PINS_NUM; i++) {
-        funPinMode(stars_gpio_pins[i] , GPIO_Speed_10MHz | GPIO_CNF_OUT_PP );
+    for (int i = 0; i < STARS_GPIO_H_PINS_NUM; i++)
+    {
+        funPinMode(stars_gpio_h_pins[i], GPIO_Speed_10MHz | GPIO_CNF_OUT_PP );
+    }
+
+    // These are the Sense (star) LEDs.
+    for (int i = 0; i < STARS_GPIO_L_PINS_NUM; i++)
+    {
+        funPinMode(stars_gpio_l_pins[i], GPIO_CFGLR_IN_PUPD /* | @todo PD??? */ );
+    }
+
+    // @debug as I recall, to do pulldown, write low.
+    for (int i = 0; i < STARS_GPIO_L_PINS_NUM; i++)
+    {
+        funDigitalWrite(stars_gpio_l_pins[i], FUN_LOW);
     }
 }
 
-
+// @todo move this to stars.c.
 void starsUpdate()
 {
-    for (int i = 0; i < STARS_GPIO_PINS_NUM; i++) {
+    for (int i = 0; i < STARS_GPIO_H_PINS_NUM; i++) {
         // We'll let the compiler optimize this away.
         // @todo or maybe use: !!registry[REG_STARS_LED_START + i]
         if (registry[REG_STARS_LED_START + i])
         {
-            funDigitalWrite( stars_gpio_pins[i], FUN_HIGH );
+            funDigitalWrite( stars_gpio_h_pins[i], FUN_HIGH );
         }
-        else {
-            funDigitalWrite( stars_gpio_pins[i], FUN_LOW );
+        else
+        {
+            funDigitalWrite( stars_gpio_h_pins[i], FUN_LOW );
         }
     }   
 }
@@ -262,20 +316,19 @@ int main()
     // @debug temp: button1Init();
 
     // Init "things".
-
     // @todo All the things inits should be done more dymamicly.
     Event_t event_init;
     event_init.type = EVENT_INIT;
     eyesHandler(event_init);
+    starsHandler(event_init);
     // @todo update and fix below.
-    // starsHandler(1);
     // upperTrimHandler(1);
     // lowerTrimHandler(1);
 
     // WS2812 init and initial "start" to render. Must go after all "things" inits, ...Handler(1)'s.
     WS2812_Init();
 
-    init_timer();
+    // @debug was used for dev, but not anymore (maybe). init_timer();
 
     // Let things settle.
     Delay_Ms( 200 );
@@ -287,15 +340,19 @@ int main()
     Event_t event_run;
     event_run.type = EVENT_RUN;
 
+    systick_init(); // @debug testing.
+
     // printf("In main, thing_timer[THING_EYES]: %d\n", thing_timer[THING_EYES]); // @debug
     printf("In main, right before loop.\n"); // @debug
 
     while(1)
     {
+        // printf("in main loop.\n"); // @debug
         // @todo button(s) occasional polling and debounce here, and create event.
 
         if (timer_tick) {
             timer_tick = 0;
+            printf("In main, timer_tick.\n"); // @debug
 
             // Handle button1.
             button1_timer--;
@@ -335,13 +392,13 @@ int main()
             thing_timer[THING_STARS]--;
             if ( thing_timer[THING_STARS] == 0 )
             {
-                stars_dirty = starsHandler(0) || stars_dirty; // The || is unnecessary, but for the sake of consistency...
+                stars_dirty = starsHandler(event_run) || stars_dirty; // The || is unnecessary, but for the sake of consistency...
             }
 
             // This could be a part of the Stars handler, but for the sake of consistency, it's here.
             if (stars_dirty) {
                 stars_dirty = 0;
-                starsUpdate(); // @todo.
+                starsUpdate(); // @todo ?
             }
         }
     }

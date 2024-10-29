@@ -13,6 +13,8 @@ const uint8_t thing_led_count[] = {
 
 uint16_t thing_timer[THING_COUNT];
 
+State_Action_t state_action[THING_COUNT];
+
 const uint8_t reg_thing_start[THING_COUNT] = {
     REG_STARS_START,
     REG_EYES_START,

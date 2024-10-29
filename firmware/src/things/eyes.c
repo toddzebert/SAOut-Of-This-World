@@ -22,7 +22,7 @@ int eyesHandler(Event_t event) // was int flag
 {
     // printf("In eyesHandler, event.type: %d\r\n", event.type); // @debug
     // printf("In eyesHandler, registry[REG_EYES_START]: %d\r\n", registry[REG_EYES_START]); // @debug
-    eyes_effect = registry[REG_EYES_START];
+    int eyes_effect = registry[REG_EYES_START];
     if (eyes_effect == 0) eyes_effect = EFFECT_WS_BLINK;
 
     // @note In things we can probably ignore a thing state_action.

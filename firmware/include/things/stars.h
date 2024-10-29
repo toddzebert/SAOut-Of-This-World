@@ -11,6 +11,6 @@ extern const uint8_t reg_thing_start[THING_COUNT];
 
 extern uint8_t stars_effect;
 
-int starsHandler(int flag);
+int starsHandler(Event_t event);
 
 #endif /* STARS_H_ */

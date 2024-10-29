@@ -1,6 +1,8 @@
 #ifndef MAIN_H_
 #define MAIN_H_
 
+#define FUNCONF_SYSTICK_USE_HCLK 1 // Systick = 48MHz
+
 #include <ch32v003fun.h>
 
 #include <stdio.h>
@@ -19,5 +21,7 @@
 // ATRLR 10(-1) and PSC 4800(-1) should result in a 1ms timer.
 #define SOTW_ATRLR 10
 #define SOTW_PSC 4800
+
+#define SYSTICK_INTERVAL 1000000
 
 #endif /* MAIN_H_ */

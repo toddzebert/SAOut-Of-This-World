@@ -11,6 +11,8 @@ extern const uint8_t reg_thing_start[THING_COUNT];
 
 extern const uint8_t reg_thing_led_start[THING_COUNT];
 
-int effect_twinkle(Things_t thing, int flag);
+extern State_Action_t state_action[THING_COUNT];
+
+int effect_twinkle(Things_t thing, Event_t event);
 
 #endif /* TWINKLE_H_ */

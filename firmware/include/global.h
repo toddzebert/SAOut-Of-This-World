@@ -9,14 +9,15 @@
 
 // Things.
 typedef enum {
-    THING_STARS = 0,
-    THING_EYES = 1,
-    THING_UPPER_TRIM = 2,
-    THING_LOWER_TRIM = 3
+    THING_STARS,
+    THING_EYES,
+    THING_UPPER_TRIM,
+    THING_LOWER_TRIM
 } Things_t;
 
 extern Things_t thing;
 
+// The UML State Actions.
 typedef enum {
     STATE_ACTION_INIT, // @todo needed?
     STATE_ACTION_ENTER,
@@ -24,6 +25,9 @@ typedef enum {
     STATE_ACTION_EXIT
 } State_Action_t;
 
+extern State_Action_t state_action[THING_COUNT];
+
+// The next bunch of statements support Events.
 typedef enum {
     EVENT_INIT,
     EVENT_RUN,
@@ -73,7 +77,8 @@ extern uint16_t thing_timer[THING_COUNT];
 
 extern const uint8_t RGB_Black[3];
 
-#define STARS_GPIO_PINS_NUM 3
+#define STARS_GPIO_H_PINS_NUM 5
+#define STARS_GPIO_L_PINS_NUM 2
 
 // Effects.
 #define EFFECT_UNDEFINED 0

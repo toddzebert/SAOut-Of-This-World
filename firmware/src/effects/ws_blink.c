@@ -70,7 +70,7 @@ union Blink_State_u {
 
 union Blink_State_u Blink_state[THING_COUNT];
 
-State_Action_t state_action[THING_COUNT];
+// State_Action_t state_action[THING_COUNT];
 
 // Functions.
 int blinkRandom(Things_t thing, Event_t event);
@@ -108,7 +108,7 @@ int effect_ws_blink(Things_t thing, Event_t event)
 
         state_action[thing] = STATE_ACTION_ENTER;
         thing_timer[thing] = 10; // Get this moving to Run soon.
-        printNon0Reg(registry); // @debug
+        // printNon0Reg(registry); // @debug
 
         return 0;
 
