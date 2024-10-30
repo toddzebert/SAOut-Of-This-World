@@ -5,15 +5,63 @@
 
 // #pragma message ("In global.h") // @debug
 
+#define THING_COUNT 4
+
 // Things.
 typedef enum {
-    THING_STARS = 0,
-    THING_EYES = 1,
-    THING_UPPER_TRIM = 2,
-    THING_LOWER_TRIM = 3
+    THING_STARS,
+    THING_EYES,
+    THING_UPPER_TRIM,
+    THING_LOWER_TRIM
 } Things_t;
 
 extern Things_t thing;
+
+// The UML State Actions.
+typedef enum {
+    STATE_ACTION_INIT, // @todo needed?
+    STATE_ACTION_ENTER,
+    STATE_ACTION_GO,
+    STATE_ACTION_EXIT
+} State_Action_t;
+
+extern State_Action_t state_action[THING_COUNT];
+
+// The next bunch of statements support Events.
+typedef enum {
+    EVENT_INIT,
+    EVENT_RUN,
+    EVENT_REG_CHANGE,
+    EVENT_BUTTON,
+} Event_Type_t;
+
+// @debug probably unneeded.
+typedef struct {
+    uint16_t data; // placeholder
+} Event_Init_Data_t;
+
+// @debug probably unneeded.
+typedef struct {
+    uint16_t data; // placeholder
+} Event_Run_Data_t;
+
+typedef struct {
+    Event_Type_t type;
+    uint8_t reg;
+    uint8_t length;
+} Event_Reg_Change_Data_t;
+
+typedef union {
+    // Event_Init_Data_t init;
+    // Event_Run_Data_t run;
+    Event_Reg_Change_Data_t reg_change;
+    // @todo button.
+} Event_Data_t;
+
+typedef struct {
+    Event_Type_t type;
+    Event_Data_t data;
+} Event_t;
 
 #define STARS_COUNT 5 // (white LEDs via GPIO)
 #define EYES_COUNT 2 // (WS2812B)
@@ -22,12 +70,12 @@ extern Things_t thing;
 
 extern const uint8_t thing_led_count[];
 
-#define THING_COUNT 4
-extern uint16_t thing_timer[THING_COUNT];
+extern uint16_t thing_tock_timer[THING_COUNT];
 
 extern const uint8_t RGB_Black[3];
 
-#define STARS_GPIO_PINS_NUM 3
+#define STARS_GPIO_H_PINS_NUM 5
+#define STARS_GPIO_L_PINS_NUM 2
 
 // Effects.
 #define EFFECT_UNDEFINED 0
@@ -35,6 +83,7 @@ extern const uint8_t RGB_Black[3];
 #define EFFECT_WS_COMET 2
 #define EFFECT_WS_BLINK 3
 #define EFFECT_TWINKLE 4
+#define EFFECT_WS_ROTATE 5
 // @todo more...
 
 // Registry.
@@ -72,12 +121,18 @@ extern volatile uint8_t registry[REG_COUNT];
 // Memcpy-like functions.
 void arrayToRegCopy(volatile uint8_t *dest, size_t dest_offset, uint8_t *src, size_t src_offset, size_t dest_len);
 
+void regToArrayCopy(uint8_t *dest, size_t dest_offset, volatile uint8_t *src, size_t src_offset, size_t dest_len);
+
 void constToRegCopy(volatile uint8_t *dest, size_t dest_offset, const uint8_t *src, size_t src_offset, size_t dest_len);
 
 void regToRegCopy(volatile uint8_t *dest, size_t dest_offset, volatile uint8_t *src, size_t src_offset, size_t dest_len);
 
 // Misc functions.
 uint8_t byteIsPowerOfTwo(uint8_t x);
+
+// Color functions.
+// see also color_utilities.h
+u_int32_t blendHexColorsWithAlpha(uint8_t br, uint8_t bg, uint8_t bb, uint8_t fr, uint8_t fg, uint8_t fb, uint8_t fa);
 
 // Debug functions.
 

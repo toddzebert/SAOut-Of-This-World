@@ -4,6 +4,8 @@
 // board definition file will already take care of this
 #define CH32V003           1
 
+// #define FUNCONF_DEBUG 1
+
 // #define FUNCONF_USE_PLL 1               // Use built-in 2x PLL 
 // #define FUNCONF_USE_HSI 1               // Use HSI Internal Oscillator
 // #define FUNCONF_USE_HSE 0               // Use External Oscillator

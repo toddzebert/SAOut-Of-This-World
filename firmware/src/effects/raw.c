@@ -4,18 +4,10 @@
 
 // @debug untested.
 
-int effect_raw(Things_t thing, int flag) {
+int effect_raw(Things_t thing, Event_t event) {
     // @todo ?
 
-    if (flag == 1) {
-        // @todo nothing to do here? Raw values already in place.
-    }
-    else
-    {
-        // @todo nothing to do here? Raw values already in place.
-    }
-
-    thing_timer[thing] = registry[reg_thing_start[thing] + Raw_Timer_offset] * 256 + registry[reg_thing_start[thing] + Raw_Timer_offset + 1];
+    thing_tock_timer[thing] = registry[reg_thing_start[thing] + Raw_Timer_offset] * 256 + registry[reg_thing_start[thing] + Raw_Timer_offset + 1];
 
     return 1; // Assumed, dunno what the user is changing in the registry.
 }

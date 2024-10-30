@@ -5,12 +5,12 @@
 #include "../effects.h"
 #include <stdio.h>
 
-extern uint16_t thing_timer[THING_COUNT];
+extern uint16_t thing_tock_timer[THING_COUNT];
 
 extern const uint8_t reg_thing_start[THING_COUNT];
 
 extern uint8_t lower_trim_effect;
 
-int lowerTrimHandler(int flag);
+int lowerTrimHandler(Event_t event);
 
 #endif /* LOWER_TRIM_H_ */
