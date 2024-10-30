@@ -15,11 +15,13 @@ At its core, its a synchronous finite state machine; it's not (directly) event-d
 
 It uses the [ch32v003fun](https://github.com/cnlohr/ch32v003fun) "environment" to avoid the manufacturer's weighty HAL/EVT; the community around it has been very helpful. We also use PlatformIO to build the project.
 
-Conceptually, initially an init event is passed to each Thing. Then there's the main loop, which communicates with Things, which in turn communicates with Effects. Effects each have a timer, based on tocks, associated with a Thing. When the timer expires, a run event is passed to each Thing which in turn passes on the event to the Effect. Other input events are passed similarly via the main loop. Another way of thinking about it is kinda like PubSub, but Things don't have to "subscribe", we "publish" all events to all Things (then passed on to Effects).
+Conceptually, initially an init event is passed to each Thing. Then there's the main loop, which communicates with Things, which in turn communicates with Effects. Effects each have a timer, based on tocks, associated with a Thing. When the timer expires, a run event is passed to each Thing which in turn passes on the event to the Effect. Other input events are passed similarly via the main loop. Another way of thinking about it is kinda like PubSub, but Things don't have to "subscribe", we "publish" all events to all Things (then passed on to Effects). Currently, Effects return a "dirty" flag, which is then returned by the corresponding Thing, to alert the main loop that the WS2812s need to be updated.
 
 Other input events include i2c writes, buttons and the "sense" LEDs.
 
 While both Things and Effects maintain there own UML "action" state (ENTER, GO, EXIT, etc), so far there's no need for Things to do so. Effects also maintain their own internal state as needed.
+
+The next most important concept is the "registry". Because this SAO is meant to be an i2c target, all the settings and outputs are stored in the registry. The i2c library modifies the registry directly when it receives a write. Things and Effects depend on both reading and writing to the registry. Any i2c controller can switch Effect "modes", settings, or even controll the LEDs and WS2812s directly using the "Raw" Effect.
 
 The MCU is the CH32V003F4U6 (QFN-20) chip, with 2 buttons, 16 WS2812s (in one channel) and five LEDs, two of which are wired special - see the hardware readme.
 
@@ -31,7 +33,7 @@ The MCU is the CH32V003F4U6 (QFN-20) chip, with 2 buttons, 16 WS2812s (in one ch
 
 * Fix "PA" GPIO pins - in progress.
 * Fix Comet effect
-* Finish & test i2c
+* Finish & test i2c. Probably need a "dirty" reg entry.
 * Finish & test buttons
 * Make LEDs PWM - see https://discord.com/channels/@me/1170888366540197899/1301040627512770580 
 * Add more effects
