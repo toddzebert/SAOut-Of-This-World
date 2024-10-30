@@ -13,4 +13,6 @@ extern uint8_t stars_effect;
 
 int starsHandler(Event_t event);
 
+void starsUpdate();
+
 #endif /* STARS_H_ */
