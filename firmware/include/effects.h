@@ -7,5 +7,6 @@
 #include "effects/raw.h"
 #include "effects/twinkle.h"
 #include "effects/ws_comet.h"
+#include "effects/ws_rotate.h"
 
 #endif /* EFFECTS_H_ */

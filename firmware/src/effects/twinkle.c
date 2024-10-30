@@ -11,7 +11,7 @@ const uint8_t twinkle_defaults[5] = {
     0, // Twinkle_Timer_default_H = 0;
     25, // Twinkle_Timer_default_L = 150; // @debug testing.
     1, // Twinkle_Mode_default - 1 = Random, 1+ TBD, make Enum?
-    32, // Twinkle_Frequency_default, out of 255
+    8, // Twinkle_Frequency_default, out of 255
 };
 
 uint8_t Twinkle_state = 0;
@@ -27,7 +27,7 @@ int effect_twinkle(Things_t thing, Event_t event)
         constToRegCopy(registry, reg_thing_start[thing], twinkle_defaults, 0, sizeof(twinkle_defaults) * sizeof(uint8_t));
 
         state_action[thing] = STATE_ACTION_ENTER;
-        thing_timer[thing] = 10; // Come back around soon from the update loop.
+        thing_tock_timer[thing] = 10; // Come back around soon from the update loop.
         return 0;
 
     case EVENT_RUN:
@@ -72,7 +72,7 @@ int effect_twinkle_run(Things_t thing, Event_t event)
         }
     }
 
-    thing_timer[thing] = registry[reg_thing_start[thing] + Twinkle_Timer_offset] * 256 + registry[reg_thing_start[thing] + Twinkle_Timer_offset + 1];
+    thing_tock_timer[thing] = registry[reg_thing_start[thing] + Twinkle_Timer_offset] * 256 + registry[reg_thing_start[thing] + Twinkle_Timer_offset + 1];
 
     return dirty;
 }

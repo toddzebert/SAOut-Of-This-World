@@ -37,24 +37,24 @@ typedef enum {
 
 // @debug probably unneeded.
 typedef struct {
-    Event_Type_t type;
-} Event_Init_t;
+    uint16_t data; // placeholder
+} Event_Init_Data_t;
 
 // @debug probably unneeded.
 typedef struct {
-    Event_Type_t type;
-} Event_Run_t;
+    uint16_t data; // placeholder
+} Event_Run_Data_t;
 
 typedef struct {
     Event_Type_t type;
     uint8_t reg;
     uint8_t length;
-} Event_Reg_Change_t;
+} Event_Reg_Change_Data_t;
 
 typedef union {
-    // Event_Init_t init;
-    // Event_Run_t run;
-    Event_Reg_Change_t reg_change;
+    // Event_Init_Data_t init;
+    // Event_Run_Data_t run;
+    Event_Reg_Change_Data_t reg_change;
     // @todo button.
 } Event_Data_t;
 
@@ -70,7 +70,7 @@ typedef struct {
 
 extern const uint8_t thing_led_count[];
 
-extern uint16_t thing_timer[THING_COUNT];
+extern uint16_t thing_tock_timer[THING_COUNT];
 
 extern const uint8_t RGB_Black[3];
 
@@ -121,12 +121,18 @@ extern volatile uint8_t registry[REG_COUNT];
 // Memcpy-like functions.
 void arrayToRegCopy(volatile uint8_t *dest, size_t dest_offset, uint8_t *src, size_t src_offset, size_t dest_len);
 
+void regToArrayCopy(uint8_t *dest, size_t dest_offset, volatile uint8_t *src, size_t src_offset, size_t dest_len);
+
 void constToRegCopy(volatile uint8_t *dest, size_t dest_offset, const uint8_t *src, size_t src_offset, size_t dest_len);
 
 void regToRegCopy(volatile uint8_t *dest, size_t dest_offset, volatile uint8_t *src, size_t src_offset, size_t dest_len);
 
 // Misc functions.
 uint8_t byteIsPowerOfTwo(uint8_t x);
+
+// Color functions.
+// see also color_utilities.h
+u_int32_t blendHexColorsWithAlpha(uint8_t br, uint8_t bg, uint8_t bb, uint8_t fr, uint8_t fg, uint8_t fb, uint8_t fa);
 
 // Debug functions.
 

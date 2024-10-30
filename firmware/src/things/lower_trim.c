@@ -7,7 +7,7 @@ int lowerTrimHandler(Event_t event)
     // printf("lowerTrimHandler\n"); // @debug
 
     lower_trim_effect = registry[reg_thing_start[THING_LOWER_TRIM]];
-    if (!lower_trim_effect) lower_trim_effect = EFFECT_WS_COMET;
+    if (!lower_trim_effect) lower_trim_effect = EFFECT_WS_ROTATE;
 
     switch (lower_trim_effect)
     {
@@ -18,7 +18,7 @@ int lowerTrimHandler(Event_t event)
         return effect_ws_comet(THING_LOWER_TRIM, event);
 
     case EFFECT_WS_ROTATE:
-        // return effect_ws_rotate(THING_UPPER_TRIM, event);
+        return effect_ws_rotate(THING_LOWER_TRIM, event);
     
     default:
         // @todo what to do if given invalid effect?

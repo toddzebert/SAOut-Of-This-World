@@ -4,7 +4,7 @@
 #include <color_utilities.h>
 
 #define WS_Comet_Timer_offset 1 // 2 bytes
-#define WS_Comer_color_offset 3
+#define WS_Comet_color_offset 3
 #define WS_Comet_Red_offset 3
 #define WS_Comet_Green_offset 4
 #define WS_Comet_Blue_offset 5
@@ -59,7 +59,7 @@ int effect_ws_comet(Things_t thing, Event_t event)
             constToRegCopy(registry, reg_thing_start[thing], ws_comet_defaults, 0, sizeof(ws_comet_defaults) * sizeof(uint8_t));
 
             state_action[thing] = STATE_ACTION_ENTER;
-            thing_timer[thing] = 10; // Get this moving to Run soon.
+            thing_tock_timer[thing] = 10; // Get this moving to Run soon.
             // printNon0Reg(registry); // @debug
 
             return 0;
@@ -67,7 +67,7 @@ int effect_ws_comet(Things_t thing, Event_t event)
         case EVENT_RUN:
             switch (registry[reg_thing_start[thing] + WS_Comet_Mode_offset])
             {
-                
+                // @todo
             }
             return effect_ws_comet_run(thing, event);
 
@@ -103,15 +103,13 @@ int effect_ws_comet_run(Things_t thing, Event_t event)
         }
 
         state_action[thing] = STATE_ACTION_GO;
-        thing_timer[thing] = 10; // Come back soon.
+        thing_tock_timer[thing] = 10; // Come back soon.
 
         return 1; // Dirty.
     }
     
     // Assuming STATE_ACTION_GO.
     // printf("WS comet state: thing %d, pos %d, dir %d, status %d\n", thing, WS_Comet_state[thing].position, WS_Comet_state[thing].direction, WS_Comet_state[thing].status); // @debug
-
-    // @todo future case on mode, but assume 0 for now.
 
     // Get comet colors handy.
     // @note "curr" is leftover from earlier code, but may mean something with "mode".
@@ -193,7 +191,7 @@ int effect_ws_comet_run(Things_t thing, Event_t event)
             // Calc new alpha.
             // A hopefully faster version of: alpha_layer_leds[curr_body_x_pos].alpha = curr_pos_in_comet * 255 / registry[reg_thing_start[thing] + WS_Comet_Tail_offset];
             uint8_t tail_len = registry[reg_thing_start[thing] + WS_Comet_Tail_offset];
-            // Bother ops are 1's based, so we don't want the end of the tail to be 0.
+            // Both ops are 1's based, so we don't want the end of the tail to be 0.
             int ab = FastMultiply(255, (tail_len - curr_pos_in_comet) + 1); // (big, small).
             // printf("ab %d, tail_len %d\n", ab, tail_len); // @debug
 
@@ -212,7 +210,7 @@ int effect_ws_comet_run(Things_t thing, Event_t event)
             }
 
             // Check for existing alpha for this position.
-            if (alpha_layer_leds[curr_body_x_pos].alpha && 0) // @debug disabling truthy for now...
+            if (alpha_layer_leds[curr_body_x_pos].alpha && 0) // @debug disabling this for now...
             {
                 // @debug ****** still broken as of 9/27 14:30 *******
                 // Get existing alpha.
@@ -282,7 +280,7 @@ int effect_ws_comet_run(Things_t thing, Event_t event)
         }
     }
 
-    thing_timer[thing] = registry[reg_thing_start[thing] + WS_Comet_Timer_offset] * 256 + registry[reg_thing_start[thing] + WS_Comet_Timer_offset + 1];
+    thing_tock_timer[thing] = registry[reg_thing_start[thing] + WS_Comet_Timer_offset] * 256 + registry[reg_thing_start[thing] + WS_Comet_Timer_offset + 1];
 
     return 1; // @note Routine is always dirty.... for now.
 }

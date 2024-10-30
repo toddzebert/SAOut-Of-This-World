@@ -61,7 +61,10 @@ The I2C (inter-IC) bus can transfer data at different speeds, including:
 const uint8_t stars_gpio_h_pins[STARS_GPIO_H_PINS_NUM] = { PC0, PD0, PA2, PA1, PD3 };
 const uint8_t stars_gpio_l_pins[STARS_GPIO_H_PINS_NUM] = { PD4, PD2 };
 
+// Timers.
 volatile uint8_t timer_tick = 0;
+volatile uint8_t timer_tick_count = 0;
+volatile uint8_t timer_tock = 0;
 
 // I2C.
 #define I2C_ADDRESS 0x09
@@ -98,13 +101,21 @@ void systick_init(void)
 	NVIC_EnableIRQ(SysTicK_IRQn);
 }
 
+// Ticks are 10ths of a millisecond. Tocks are 1ms.
 void SysTick_Handler(void) __attribute__((interrupt));
 void SysTick_Handler(void)
 {
+    timer_tick_count++; // 1's indexed.
     timer_tick = 1;
 
-    // Set the compare register to trigger once per millisecond
-    SysTick->CMP += SYSTICK_ONE_MILLISECOND;
+    if (timer_tick_count == 10)
+    {
+        timer_tick_count = 0;
+        timer_tock = 1;
+    }
+
+    // Set the compare register to trigger once per 10th millisecond.
+    SysTick->CMP += SYSTICK_ONE_TENTH_MILLISECOND; // @debug was SYSTICK_ONE_MILLISECOND;
 
 	// Clear the trigger state for the next IRQ
 	SysTick->SR = 0x00000000;
@@ -278,32 +289,39 @@ int main()
         if (timer_tick)
         {
             timer_tick = 0;
+
+            // @todo do what we want here.
+        }
+
+        if (timer_tock)
+        {
+            timer_tock = 0;
             // Handle button1.
             button1_timer--;
             if ( button1_timer == 0 ) button1Handler();
 
             // Handle Eyes.
-            thing_timer[THING_EYES]--;
-            if ( thing_timer[THING_EYES] == 0 )
+            thing_tock_timer[THING_EYES]--;
+            if ( thing_tock_timer[THING_EYES] == 0 )
             {
                 // printf("In main, thing_timer[THING_EYES] == 0.\n"); // @debug
                 ws_dirty = eyesHandler(event_run) || ws_dirty;
             }
 
             // Handle Upper Trim.
-            thing_timer[THING_UPPER_TRIM]--;
-            if ( thing_timer[THING_UPPER_TRIM] == 0 )
+            thing_tock_timer[THING_UPPER_TRIM]--;
+            if ( thing_tock_timer[THING_UPPER_TRIM] == 0 )
             {
                 ws_dirty = upperTrimHandler(event_run) || ws_dirty;
             }
 
             // Handle Lower Trim.
-            thing_timer[THING_LOWER_TRIM]--;
-            if ( thing_timer[THING_LOWER_TRIM] == 0 )
+            thing_tock_timer[THING_LOWER_TRIM]--;
+            if ( thing_tock_timer[THING_LOWER_TRIM] == 0 )
             {
                 ws_dirty = lowerTrimHandler(event_run) || ws_dirty;
             }
-            
+
             // This should always be at the end, after all WS Things handlers.
             if (ws_dirty) {
                 ws_dirty = 0;
@@ -311,8 +329,8 @@ int main()
             }
 
             // Handle Stars (not a WS Thing).
-            thing_timer[THING_STARS]--;
-            if ( thing_timer[THING_STARS] == 0 )
+            thing_tock_timer[THING_STARS]--;
+            if ( thing_tock_timer[THING_STARS] == 0 )
             {
                 stars_dirty = starsHandler(event_run) || stars_dirty; // The || is unnecessary, but for the sake of consistency...
             }

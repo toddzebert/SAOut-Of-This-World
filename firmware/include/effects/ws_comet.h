@@ -5,7 +5,7 @@
 
 #include "../global.h" // Need for Things_t, etc.
 
-extern uint16_t thing_timer[THING_COUNT];
+extern uint16_t thing_tock_timer[THING_COUNT];
 
 extern const uint8_t reg_thing_start[THING_COUNT];
 

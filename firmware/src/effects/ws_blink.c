@@ -107,7 +107,7 @@ int effect_ws_blink(Things_t thing, Event_t event)
         constToRegCopy(registry, reg_thing_start[thing], blink_defaults, 0, sizeof(blink_defaults) * sizeof(uint8_t));
 
         state_action[thing] = STATE_ACTION_ENTER;
-        thing_timer[thing] = 10; // Get this moving to Run soon.
+        thing_tock_timer[thing] = 10; // Get this moving to Run soon.
         // printNon0Reg(registry); // @debug
 
         return 0;
@@ -168,7 +168,7 @@ int blinkRandom(Things_t thing, Event_t event)
         Blink_state[thing].random.right_blink = 0;
 
         state_action[thing] = STATE_ACTION_GO;
-        thing_timer[thing] = 10; // Come back soon.
+        thing_tock_timer[thing] = 10; // Come back soon.
 
         return 1; // Dirty.
     }
@@ -230,7 +230,7 @@ int blinkRandom(Things_t thing, Event_t event)
     }
 
     // Set timer.
-    thing_timer[thing] = registry[reg_thing_start[thing] + Blink_Timer_offset] * 256 + registry[reg_thing_start[thing] + Blink_Timer_offset + 1];
+    thing_tock_timer[thing] = registry[reg_thing_start[thing] + Blink_Timer_offset] * 256 + registry[reg_thing_start[thing] + Blink_Timer_offset + 1];
     
     return dirty;
 }
@@ -266,7 +266,7 @@ int blinkAlternate(Things_t thing, Event_t event)
         Blink_state[thing].alternate.mini_timer = 7; // For count down.
 
         state_action[thing] = STATE_ACTION_GO;
-        thing_timer[thing] = 10; // Come back soon.
+        thing_tock_timer[thing] = 10; // Come back soon.
 
         return 1; // Dirty.
     }
@@ -357,7 +357,7 @@ int blinkAlternate(Things_t thing, Event_t event)
     }
     
     // Set timer.
-    thing_timer[thing] = registry[reg_thing_start[thing] + Blink_Timer_offset] * 256 + registry[reg_thing_start[thing] + Blink_Timer_offset + 1];
+    thing_tock_timer[thing] = registry[reg_thing_start[thing] + Blink_Timer_offset] * 256 + registry[reg_thing_start[thing] + Blink_Timer_offset + 1];
 
     return dirty;
 }
