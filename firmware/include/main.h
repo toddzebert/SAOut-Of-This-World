@@ -1,9 +1,6 @@
 #ifndef MAIN_H_
 #define MAIN_H_
 
-// Systick = 48MHz.
-#define FUNCONF_SYSTICK_USE_HCLK 1
-
 #include <ch32v003fun.h>
 
 #include <stdio.h>
