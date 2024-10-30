@@ -7,14 +7,15 @@
 #include <ch32v003fun.h>
 
 #include <stdio.h>
+#include <stdbool.h>
 // #include <string.h>
 // #include <stdlib.h>
 // #include <stdint.h>
 
-#include <i2c_slave.h>
+// @debug PA: #include <i2c_slave.h>
 
 #include "global.h"
-#include "ws2812.h"
+// @debug PA: #include "ws2812.h"
 #include "button.h"
 #include "things.h"
 

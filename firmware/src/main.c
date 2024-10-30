@@ -212,7 +212,7 @@ void init_i2c() {
 
     // Address, registers, registers length, onWrite callback, onRead callback, read only.
     // > The I2C1 peripheral can also listen on a secondary address. [see Readme]
-    SetupI2CSlave(I2C_ADDRESS, registry, sizeof(registry), onI2cWrite, onI2cRead, false);
+    // @debug PA: SetupI2CSlave(I2C_ADDRESS, registry, sizeof(registry), onI2cWrite, onI2cRead, false);
 }
 
 /**
@@ -234,7 +234,7 @@ int main()
     // Let things settle.
     Delay_Ms( 200 );
 
-    init_i2c();
+    // @debug PA: init_i2c();
 
     // Must be below init_i2c().
     init_gpio();
@@ -263,7 +263,7 @@ int main()
     lowerTrimHandler(event_init);
 
     // WS2812 init and initial "start" to render. Must go after all "things" inits, ...Handler(1)'s.
-    WS2812_Init();
+    // @debug PA: WS2812_Init();
 
     // @debug was used for dev, but not anymore (maybe). init_timer();
 
@@ -325,7 +325,7 @@ int main()
             // This should always be at the end, after all WS Things handlers.
             if (ws_dirty) {
                 ws_dirty = 0;
-                WS2812_Handler();
+                // @debug PA: WS2812_Handler();
             }
 
             // Handle Stars (not a WS Thing).
