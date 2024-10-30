@@ -4,18 +4,6 @@
 */
 
 /*
-    *** THESE ARE FOR CH32V003F4P6 (TSSOP-20) Eval Board ***
-    *** BUT SAO will use ...F4U6 (QFN-20) chip ***
-    *** EACH have 20pins so pins should be mostly similar ***
-    CH32 = product line.
-    V = QingKe RISC-V-based
-    0 = QingKe V2 core (no FP)
-    03 = General Purpose
-    F = 20 pins
-    4 = 16 Kbytes of Flash memory 
-    P/U = TSSOP/QFN respectively
-    6 = -40℃～85℃ (industrial-grade) 
-
     From ws2812b_dma_spi_led_driver.h:
         For the CH32V003 this means output will be on PORTC Pin 6 (MOSI)
         void DMA1_Channel3_IRQHandler( void );
@@ -257,6 +245,7 @@ int main()
     // @todo All the things inits should be done more dymamicly.
     Event_t event_init;
     event_init.type = EVENT_INIT;
+
     eyesHandler(event_init);
     starsHandler(event_init);
     upperTrimHandler(event_init);
