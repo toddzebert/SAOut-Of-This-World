@@ -57,10 +57,6 @@ The I2C (inter-IC) bus can transfer data at different speeds, including:
 
 #include "main.h"
 
-// Stars GPIO pins.
-const uint8_t stars_gpio_h_pins[STARS_GPIO_H_PINS_NUM] = { PC0, PD0, PA2, PA1, PD3 };
-const uint8_t stars_gpio_l_pins[STARS_GPIO_H_PINS_NUM] = { PD4, PD2 };
-
 // Timers.
 volatile uint8_t timer_tick = 0;
 volatile uint8_t timer_tick_count = 0;
@@ -121,41 +117,6 @@ void SysTick_Handler(void)
 	SysTick->SR = 0x00000000;
 }
 
-// Init non-i2c GPIO.
-void init_gpio() {
-    // funGpioInitAll(); // This doesn't need to be called as the i2c lib does.
-    // ... so place this below the i2c init.
-
-    // Stars LEDs.
-    for (int i = 0; i < STARS_GPIO_H_PINS_NUM; i++)
-    {
-        funPinMode(stars_gpio_h_pins[i], GPIO_Speed_10MHz | GPIO_CNF_OUT_PP );
-    }
-    
-    // These are the Sense (star) LEDs.
-    for (int i = 0; i < STARS_GPIO_L_PINS_NUM; i++)
-    {
-        funPinMode(stars_gpio_l_pins[i], GPIO_Speed_10MHz | GPIO_CNF_OUT_PP );
-        funDigitalWrite( stars_gpio_h_pins[i], FUN_LOW );
-    }
-}
-
-// @todo move this to stars.c.
-void starsUpdate()
-{
-    for (int i = 0; i < STARS_GPIO_H_PINS_NUM; i++) {
-        // We'll let the compiler optimize this away.
-        // @todo or maybe use: !!registry[REG_STARS_LED_START + i]
-        if (registry[REG_STARS_LED_START + i])
-        {
-            funDigitalWrite( stars_gpio_h_pins[i], FUN_HIGH );
-        }
-        else
-        {
-            funDigitalWrite( stars_gpio_h_pins[i], FUN_LOW );
-        }
-    }   
-}
 
 void copyInRegReservedGlobal()
 {
@@ -235,9 +196,6 @@ int main()
     Delay_Ms( 200 );
 
     init_i2c();
-
-    // Must be below init_i2c().
-    init_gpio();
 
     Delay_Ms( 200 ); // Let things settle.
 
