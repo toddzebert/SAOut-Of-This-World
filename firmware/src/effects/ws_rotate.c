@@ -16,19 +16,28 @@
 #define WS_Rotate_Mode_offset 10
 #define WS_Rotate_Freq_offset 11
 
+#define WS_Rotate_Mode_Fixed 0
+#define WS_Rotate_Mode_Complimentary 1
+#define WS_Rotate_Mode_Random 2
+
+#define WS_Rotate_Direction_Left 0
+#define WS_Rotate_Direction_Right 1
+#define WS_Rotate_Direction_Random 2
+
+
 const uint8_t ws_rotate_defaults[] = {
     EFFECT_WS_ROTATE,
     0, // Timer_default_H = 0;
     150, // Timer_default_L = TBD;
-    0, // Rotate_Red_default = 0;
-    0, // Rotate_Green_default = 0;
-    0, // Rotate_Blue_default = 0;
-    0, // Rotate_BG_Red_default = 0;
+    255, // Rotate_Red_default = 0;
+    255, // Rotate_Green_default = 0;
+    255, // Rotate_Blue_default = 0;
+    128, // Rotate_BG_Red_default = 0;
     0, // Rotate_BG_Green_default = 0; // @debug
-    255, // Rotate_BG_Blue_default = 0; // @debug
-    255, // FG Alpha_default = 255;
-    0x22, // Mode_default = 0x22; // = Random color + direction.
-    192, // Frequency_default = 32; // @debug
+    0, // Rotate_BG_Blue_default = 0; // @debug
+    128, // FG Alpha_default = 255;
+    WS_Rotate_Mode_Fixed << 4 | WS_Rotate_Direction_Random, // Mode_default = @todo; // Mode << 4 | Direction
+    128, // Frequency_default = 32; // @debug
 };
 
 
@@ -46,11 +55,20 @@ typedef union
     WS_Rotate_Mode_Data_t data;
 } WS_Rotate_Mode_t;
 
-// @todo this will have to be fleshed out.
+// This is just direction, for now?
 uint8_t WS_Rotate_state[THING_COUNT];
 
 int effect_ws_rotate_run(Things_t thing, Event_t event);
 
+/**
+ * @brief The main entry point for the WS Rotate effect.
+ * @details This effect does a rotating wheel of colors.
+ *
+ * @param thing The thing to run the effect on.
+ * @param event The event that triggered this effect.
+ *
+ * @return 1 if the LEDs were modified, 0 otherwise.
+ */
 int effect_ws_rotate(Things_t thing, Event_t event)
 {
     switch (event.type)
@@ -75,20 +93,32 @@ int effect_ws_rotate(Things_t thing, Event_t event)
     }
 }
 
+/**
+ * @brief
+ * WS Rotate effect. This effect cycles through a sequence of colors, chosen based on the mode chosen.
+ * The mode is a bit field, with the upper nibble being the mode, and the lower nibble being the direction.
+ * The direction is either left (lower) or right (higher), and the mode is one of the following:
+ * - 0: fixed color from reg "fixed" color.
+ * - 1: complimentary color from reg "fixed" color.
+ * - 2: random color.
+ *
+ * @param thing
+ * @param event
+ *
+ * @return 1 if the LEDs were modified, 0 otherwise.
+ */
 int effect_ws_rotate_run(Things_t thing, Event_t event)
 {
     uint8_t reg_led_temp[27]; // max leds, 9 * 3 (RGB).
     WS_Rotate_Mode_t mode;
     uint8_t r, g, b;
 
-    // printf("In effect_ws_rotate_run, thing is: %u\r\n", thing); // @debug
-
     if (state_action[thing] == STATE_ACTION_ENTER)
     {
         // @todo set any state here.
-        WS_Rotate_state[thing] = mode.data.ln; // @debug for now, just direction.
+        WS_Rotate_state[thing] = mode.data.ln; // Just direction.
         // Randomize direction?
-        if (WS_Rotate_state[thing] == 2) WS_Rotate_state[thing] = rnd_fun(39845, 1); // Rando seed.
+        if (WS_Rotate_state[thing] == 2) WS_Rotate_state[thing] = rnd_fun(0, 1) & 0x01; // To get 0|1.
 
         state_action[thing] = STATE_ACTION_GO;
         thing_tock_timer[thing] = 10; // Come back soon.
@@ -101,19 +131,13 @@ int effect_ws_rotate_run(Things_t thing, Event_t event)
     // Set mode from the registry.
     mode.raw = registry[reg_thing_start[thing] + WS_Rotate_Mode_offset];
 
-    // printf("Mode: 0x%02x\r\n", mode.raw); // @debug
-    // printf("Mode.data.hn: 0x%01x\r\n", mode.data.hn); // @debug
-    // printf("Mode.data.ln: 0x%01x\r\n", mode.data.ln); // @debug
-
-    // @todo check if Random is anything other than 255, otherwise randomly set to background color.
     // Determine new color's base.
     if
     (
         registry[reg_thing_start[thing] + WS_Rotate_Freq_offset] < 255 &&
-        rnd_fun(0, 8) < registry[reg_thing_start[thing] + WS_Rotate_Freq_offset]
+        (uint8_t)rnd_fun(0, 8) < registry[reg_thing_start[thing] + WS_Rotate_Freq_offset]
     )
     {
-        printf("using background color.\n\r");
         r = registry[reg_thing_start[thing] + WS_Rotate_BG_Red_offset];
         g = registry[reg_thing_start[thing] + WS_Rotate_BG_Green_offset];
         b = registry[reg_thing_start[thing] + WS_Rotate_BG_Blue_offset];
@@ -122,47 +146,51 @@ int effect_ws_rotate_run(Things_t thing, Event_t event)
     {
         switch (mode.data.hn)
         {
-            case 0: // Fixed color from reg "fixed" color.
+            case WS_Rotate_Mode_Fixed:
                 r = registry[reg_thing_start[thing] + WS_Rotate_Fixed_Red_offset];
                 g = registry[reg_thing_start[thing] + WS_Rotate_Fixed_Green_offset];
                 b = registry[reg_thing_start[thing] + WS_Rotate_Fixed_Blue_offset];
                 break;
 
-            case 1: // Complimentary color from reg "fixed" color.
+            case WS_Rotate_Mode_Complimentary:
                 r = registry[reg_thing_start[thing] + WS_Rotate_Fixed_Red_offset];
-                if (rnd_fun(0, 1)) r = 255 - r;
+                if (rnd_fun(0, 1) & 0x01) r = 255 - r;
                 g = registry[reg_thing_start[thing] + WS_Rotate_Fixed_Green_offset];
-                if (rnd_fun(0, 1)) g = 255 - g;
+                if (rnd_fun(0, 1) & 0x01) g = 255 - g;
                 b = registry[reg_thing_start[thing] + WS_Rotate_Fixed_Blue_offset];
-                if (rnd_fun(0, 1)) b = 255 - b;
+                if (rnd_fun(0, 1) & 0x01) b = 255 - b;
                 break;
 
-            case 2: // Random color.
+            case WS_Rotate_Mode_Random:
                 r = (uint8_t) rnd_fun(0, 255);
                 g = (uint8_t) rnd_fun(0, 255);
                 b = (uint8_t) rnd_fun(0, 255);
                 break;
         }
+
+        // If alpha, update color.
+        if (registry[reg_thing_start[thing] + WS_Rotate_FG_alpha_offset] < 255) {
+            // Use BG color from registry.
+            uint32_t rgb = blendHexColorsWithAlpha(
+                registry[reg_thing_start[thing] + WS_Rotate_BG_Red_offset],
+                registry[reg_thing_start[thing] + WS_Rotate_BG_Green_offset],
+                registry[reg_thing_start[thing] + WS_Rotate_BG_Blue_offset],
+                r, g, b, registry[reg_thing_start[thing] + WS_Rotate_FG_alpha_offset]
+            );
+
+            r = (rgb >> 16) & 0xFF;
+            g = (rgb >> 8) & 0xFF;
+            b = rgb & 0xFF;
+
+            // printf("Rotate, post alpha blend: %u %u %u\n\n", r, g, b); // @debug
+        }
     }
 
-    // printf("Color: 0x%02x%02x%02x\r\n", r, g, b); // @debug
 
-    // If alpha, update color.
-    if (registry[reg_thing_start[thing] + WS_Rotate_FG_alpha_offset] < 255) {
-        // Use BG color from registry.
-        uint32_t rgb = blendHexColorsWithAlpha(registry[reg_thing_start[thing] + WS_Rotate_BG_Red_offset], registry[reg_thing_start[thing] + WS_Rotate_BG_Green_offset], registry[reg_thing_start[thing] + WS_Rotate_BG_Blue_offset], r, g, b, registry[reg_thing_start[thing] + WS_Rotate_FG_alpha_offset]);
-        r = rgb >> 16;
-        g = rgb >> 8;
-        b = rgb;
-    }
-
-    printf("WS_Rotate_state[thing]: %d\r\n", WS_Rotate_state[thing]); // @debug
-    printf("WS_Rotate mode.data.ln: %d\r\n", mode.data.ln); // @debug
 
     // Based on direction, copy some parts of temp to LED reg, then populate remaining with new color.
     if (WS_Rotate_state[thing] == 0)
     {
-        // printf("WS_Rotate_state[thing] == 0\r\n"); // @debug
         // Left (lower). So thing's 0th LED gets 2nd of temps.
         arrayToRegCopy(registry, reg_thing_led_start[thing], reg_led_temp, 3, (thing_led_count[thing] - 1) * 3);
         // Populate last LED with new color.
@@ -172,7 +200,6 @@ int effect_ws_rotate_run(Things_t thing, Event_t event)
     }
     else
     {
-        // printf("WS_Rotate_state[thing] != 0\r\n"); // @debug
         // Right (higher). So thing's last LED gets temps 2nd to last.
         arrayToRegCopy(registry, reg_thing_led_start[thing] + 3, reg_led_temp, 0, (thing_led_count[thing] - 1) * 3);
         // Populate first LED with new color.

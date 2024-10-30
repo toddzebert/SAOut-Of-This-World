@@ -141,19 +141,52 @@ inline uint8_t byteIsPowerOfTwo(uint8_t x)
 // @note this can easily clip the result.
 u_int32_t blendHexColorsWithAlpha(uint8_t br, uint8_t bg, uint8_t bb, uint8_t fr, uint8_t fg, uint8_t fb, uint8_t fa)
 {
-    if (fa == 0)
-    {
-        return (uint32_t)br << 16 | (uint32_t)bg << 8 | (uint32_t)bb;
-    }
+    // printf("blendHexColorsWithAlpha: %d %d %d %d %d %d %d\n", br, bg, bb, fr, fg, fb, fa); // @debug
 
-    if (fa == 255) {
-        return (uint32_t)fr << 16 | (uint32_t)fg << 8 | (uint32_t)fb;}
+    if (fa == 0) return (uint32_t)br << 16 | (uint32_t)bg << 8 | (uint32_t)bb; // Return background.
+
+    if (fa == 255) return (uint32_t)fr << 16 | (uint32_t)fg << 8 | (uint32_t)fb; // Return foreground.
     
-    uint32_t r = (br + FastMultiply(fr, 255 - fa)) && 0xff;
-    uint32_t g = (bg + FastMultiply(fg, 255 - fa)) && 0xff;
-    uint32_t b = (bb + FastMultiply(fb, 255 - fa)) && 0xff;
+    /* @debug all below
+    uint32_t temp = FastMultiply(fr, 255 - fa);
+    printf("RED FastMultiply(fr, 255 - fa): %lu\n", temp); // @debug
+    temp = temp >> 8;
+    printf("RED temp >> 8: %lu\n", temp); // @debug
+    temp = temp + br;
+    printf("RED temp + br: %lu\n", temp); // @debug
+    temp = temp & 0xff;
+    printf("RED temp & 0xff: %lu\n", temp); // @debug
+
+    temp = FastMultiply(fg, 255 - fa);
+    printf("GREEN FastMultiply(fg, 255 - fa): %lu\n", temp); // @debug
+    temp = temp >> 8;
+    printf("GREEN temp >> 8: %lu\n", temp); // @debug
+    temp = temp + bg;
+    printf("GREEN temp + bg: %lu\n", temp); // @debug
+    temp = temp & 0xff;
+    printf("GREEN temp & 0xff: %lu\n", temp); // @debug
+    @debug end. */
+
+    /* @debug works, basically 
+    uint32_t r = (br + (FastMultiply(fr, 255 - fa) >> 8)) & 0xff;
+    uint32_t g = (bg + (FastMultiply(fg, 255 - fa) >> 8)) & 0xff;
+    uint32_t b = (bb + (FastMultiply(fb, 255 - fa) >> 8)) & 0xff;
+    */
+
+    /* @debug like color's tween but doesn't work
+    uint32_t r = (br + (FastMultiply(fr, 255 - fa) + 128)) >> 8;
+    uint32_t g = (bg + (FastMultiply(fg, 255 - fa) + 128)) >> 8;
+    uint32_t b = (bb + (FastMultiply(fb, 255 - fa) + 128)) >> 8;
+    */
+
+    // @debug
+    uint32_t r = (br + ((FastMultiply(fr, 255 - fa) + 128) >> 8)) & 0xff;
+    uint32_t g = (bg + ((FastMultiply(fg, 255 - fa) + 128) >> 8)) & 0xff;
+    uint32_t b = (bb + ((FastMultiply(fb, 255 - fa) + 128) >> 8)) & 0xff;
+
+    // printf("blendHexColorsWithAlpha: %lu %lu %lu\n", r, g, b); // @debug
     
-    return (uint32_t)r << 16 | (uint32_t)g << 8 | (uint32_t)b;
+    return (r << 16) | (g << 8) | b;
 }
 
 /**

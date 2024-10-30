@@ -89,7 +89,7 @@ int effect_ws_comet_run(Things_t thing, Event_t event)
     {
         // Set initial state.
         WS_Comet_state[thing].position = thing_led_count[thing] >> 2; // Start at middle.
-        WS_Comet_state[thing].direction = rnd_fun(0, 1);
+        WS_Comet_state[thing].direction = rnd_fun(0, 1) & 0x01; // To get 0|1.
         WS_Comet_state[thing].status = 0;
         // printf("WS *init* comet state: thing %d, pos %d, dir %d, status %d\n", thing, WS_Comet_state[thing].position, WS_Comet_state[thing].direction, WS_Comet_state[thing].status); // @debug
 

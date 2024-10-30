@@ -36,6 +36,10 @@
 | URX     | URX        | 20  | PD6, USART, exposed pad  |
 | VSS     | GND        | 21  |                          |
 
+## CH32V003FUN Platform Notes
+
+* To get a random binary: `rnd_fun(0, 1) & 0x01)`
+* To get a 0-255 randomly: `(uint8_t)rnd_fun(0, 1)`
 
 ## Thanks.
 Special thanks to cnlohr for the [ch32v003fun](https://github.com/cnlohr/ch32v003fun) project,
