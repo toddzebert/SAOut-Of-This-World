@@ -2,16 +2,13 @@
 
 // Internal use.
 #define LEDS 16
-// This is default in the lib but making it explicit.
-// @debug testing: #define DMALEDS 16
+// @note due to quirks of the WS lib, the below needs to be divisible by 4, AND the first 2 are "dead", so pad it.
+#define DMALEDS 20
+
 #define WS2812DMA_IMPLEMENTATION
 #define WSRBG
 
 #include <ws2812b_dma_spi_led_driver.h>
-
-// @todo perhaps reviewe ws_blink and ws_comet and DRY out some of the alpha code and include it here?
-// #include <rand.h>
-// #include <color_utilities.h>
 
 /*
 WS2812B:
@@ -67,7 +64,6 @@ void WS2812_Init()
 
 uint32_t WS2812BLEDCallback( int ledno )
 {
-    // printf("WS led %d has color 0x%lx\n", ledno, leds[ledno]); // @debug NOTE this will break timing.
     return leds[ledno];
 }
 

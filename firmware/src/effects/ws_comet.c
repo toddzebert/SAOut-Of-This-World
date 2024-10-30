@@ -39,7 +39,7 @@ struct WS_Comet_state_t {
     uint8_t status: 3; // 0-7 - use will depend on the mode. TBD.
 };
 
-// @todo make all other WS events store state in thing array.
+// @todo make all other WS events store state in Thing array.
 struct WS_Comet_state_t WS_Comet_state[THING_COUNT];
 
 struct Alpha_Layer_LED_t {

@@ -14,6 +14,7 @@
 #define WS_Rotate_BG_Blue_offset 8
 #define WS_Rotate_FG_alpha_offset 9
 #define WS_Rotate_Mode_offset 10
+#define WS_Rotate_Freq_offset 11
 
 const uint8_t ws_rotate_defaults[] = {
     EFFECT_WS_ROTATE,
@@ -23,10 +24,11 @@ const uint8_t ws_rotate_defaults[] = {
     0, // Rotate_Green_default = 0;
     0, // Rotate_Blue_default = 0;
     0, // Rotate_BG_Red_default = 0;
-    0, // Rotate_BG_Green_default = 0;
+    0, // Rotate_BG_Green_default = 0; // @debug
     255, // Rotate_BG_Blue_default = 0; // @debug
-    255, // Alpha_default = 255;
-    0x21, // Mode_default = 0x22; // = Random color + direction.
+    255, // FG Alpha_default = 255;
+    0x22, // Mode_default = 0x22; // = Random color + direction.
+    192, // Frequency_default = 32; // @debug
 };
 
 
@@ -51,8 +53,6 @@ int effect_ws_rotate_run(Things_t thing, Event_t event);
 
 int effect_ws_rotate(Things_t thing, Event_t event)
 {
-    // printf("In effect_ws_rotate, thing is: %u\r\n", thing); // @debug
-
     switch (event.type)
     {
         case EVENT_INIT:
@@ -87,11 +87,8 @@ int effect_ws_rotate_run(Things_t thing, Event_t event)
     {
         // @todo set any state here.
         WS_Rotate_state[thing] = mode.data.ln; // @debug for now, just direction.
-        if (WS_Rotate_state[thing] == 2)
-        {
-            // Random dir request.
-            WS_Rotate_state[thing] = rnd_fun(0, 1);
-        }
+        // Randomize direction?
+        if (WS_Rotate_state[thing] == 2) WS_Rotate_state[thing] = rnd_fun(39845, 1); // Rando seed.
 
         state_action[thing] = STATE_ACTION_GO;
         thing_tock_timer[thing] = 10; // Come back soon.
@@ -110,28 +107,42 @@ int effect_ws_rotate_run(Things_t thing, Event_t event)
 
     // @todo check if Random is anything other than 255, otherwise randomly set to background color.
     // Determine new color's base.
-    switch (mode.data.hn)
+    if
+    (
+        registry[reg_thing_start[thing] + WS_Rotate_Freq_offset] < 255 &&
+        rnd_fun(0, 8) < registry[reg_thing_start[thing] + WS_Rotate_Freq_offset]
+    )
     {
-        case 0: // Fixed color from reg "fixed" color.
-            r = registry[reg_thing_start[thing] + WS_Rotate_Fixed_Red_offset];
-            g = registry[reg_thing_start[thing] + WS_Rotate_Fixed_Green_offset];
-            b = registry[reg_thing_start[thing] + WS_Rotate_Fixed_Blue_offset];
-            break;
+        printf("using background color.\n\r");
+        r = registry[reg_thing_start[thing] + WS_Rotate_BG_Red_offset];
+        g = registry[reg_thing_start[thing] + WS_Rotate_BG_Green_offset];
+        b = registry[reg_thing_start[thing] + WS_Rotate_BG_Blue_offset];
+    }
+    else
+    {
+        switch (mode.data.hn)
+        {
+            case 0: // Fixed color from reg "fixed" color.
+                r = registry[reg_thing_start[thing] + WS_Rotate_Fixed_Red_offset];
+                g = registry[reg_thing_start[thing] + WS_Rotate_Fixed_Green_offset];
+                b = registry[reg_thing_start[thing] + WS_Rotate_Fixed_Blue_offset];
+                break;
 
-        case 1: // Complimentary color from reg "fixed" color.
-            r = registry[reg_thing_start[thing] + WS_Rotate_Fixed_Red_offset];
-            if (rnd_fun(0, 1)) r = 255 - r;
-            g = registry[reg_thing_start[thing] + WS_Rotate_Fixed_Green_offset];
-            if (rnd_fun(0, 1)) g = 255 - g;
-            b = registry[reg_thing_start[thing] + WS_Rotate_Fixed_Blue_offset];
-            if (rnd_fun(0, 1)) b = 255 - b;
-            break;
+            case 1: // Complimentary color from reg "fixed" color.
+                r = registry[reg_thing_start[thing] + WS_Rotate_Fixed_Red_offset];
+                if (rnd_fun(0, 1)) r = 255 - r;
+                g = registry[reg_thing_start[thing] + WS_Rotate_Fixed_Green_offset];
+                if (rnd_fun(0, 1)) g = 255 - g;
+                b = registry[reg_thing_start[thing] + WS_Rotate_Fixed_Blue_offset];
+                if (rnd_fun(0, 1)) b = 255 - b;
+                break;
 
-        case 2: // Random color.
-            r = (uint8_t) rnd_fun(0, 255);
-            g = (uint8_t) rnd_fun(0, 255);
-            b = (uint8_t) rnd_fun(0, 255);
-            break;
+            case 2: // Random color.
+                r = (uint8_t) rnd_fun(0, 255);
+                g = (uint8_t) rnd_fun(0, 255);
+                b = (uint8_t) rnd_fun(0, 255);
+                break;
+        }
     }
 
     // printf("Color: 0x%02x%02x%02x\r\n", r, g, b); // @debug
@@ -145,19 +156,23 @@ int effect_ws_rotate_run(Things_t thing, Event_t event)
         b = rgb;
     }
 
+    printf("WS_Rotate_state[thing]: %d\r\n", WS_Rotate_state[thing]); // @debug
+    printf("WS_Rotate mode.data.ln: %d\r\n", mode.data.ln); // @debug
+
     // Based on direction, copy some parts of temp to LED reg, then populate remaining with new color.
     if (WS_Rotate_state[thing] == 0)
     {
+        // printf("WS_Rotate_state[thing] == 0\r\n"); // @debug
         // Left (lower). So thing's 0th LED gets 2nd of temps.
         arrayToRegCopy(registry, reg_thing_led_start[thing], reg_led_temp, 3, (thing_led_count[thing] - 1) * 3);
         // Populate last LED with new color.
         registry[reg_thing_led_start[thing] + (thing_led_count[thing] - 1) * 3] = r;
         registry[reg_thing_led_start[thing] + (thing_led_count[thing] - 1) * 3 + 1] = g;
         registry[reg_thing_led_start[thing] + (thing_led_count[thing] - 1) * 3 + 2] = b;
-        
     }
     else
     {
+        // printf("WS_Rotate_state[thing] != 0\r\n"); // @debug
         // Right (higher). So thing's last LED gets temps 2nd to last.
         arrayToRegCopy(registry, reg_thing_led_start[thing] + 3, reg_led_temp, 0, (thing_led_count[thing] - 1) * 3);
         // Populate first LED with new color.
