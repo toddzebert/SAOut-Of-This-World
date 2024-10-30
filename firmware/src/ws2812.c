@@ -2,8 +2,9 @@
 
 // Internal use.
 #define LEDS 16
-// This is default in the lib but making it explicit.
-// @debug testing: #define DMALEDS 16
+// @note due to quirks of the WS lib, the below needs to be divisible by 4, AND the first 2 are "dead", so pad it.
+#define DMALEDS 20
+
 #define WS2812DMA_IMPLEMENTATION
 #define WSRBG
 
@@ -33,6 +34,7 @@ const uint8_t gamma8[]  = {
   177,180,182,184,186,189,191,193,196,198,200,203,205,208,210,213,
   215,218,220,223,225,228,231,233,236,239,241,244,247,249,252,255 };
 
+// @note [move this comment] green is brightest, followed closely by red, then a distant blue.
 const uint8_t reg_reserved_ws[] = {
     1, // gamma adjust, default 1
     1, // blue compensation, default 1
@@ -49,6 +51,14 @@ const uint8_t reg_reserved_ws[] = {
 // Where the WS callback will gets its data.
 uint32_t leds[LEDS] = {0};
 
+/**
+ * @brief Initializes the WS2812 LED system.
+ *
+ * This function sets up the WS2812 LED system by initializing the DMA settings
+ * for the specified number of LEDs. It also starts the DMA process to handle
+ * any initial LED configurations and copies default registry values from a
+ * predefined array to the registry.
+ */
 void WS2812_Init()
 {
     WS2812BDMAInit(LEDS);
@@ -60,9 +70,17 @@ void WS2812_Init()
 }
 
 
+/**
+ * @brief Callback function to retrieve the color for a specific LED.
+ * 
+ * This function is called to get the color data for a specified LED
+ * number. The color format is in 0xRRGGBB.
+ *
+ * @param ledno The index of the LED for which to retrieve the color.
+ * @return The color value of the LED as a 32-bit integer.
+ */
 uint32_t WS2812BLEDCallback( int ledno )
 {
-    // printf("WS led %d has color 0x%lx\n", ledno, leds[ledno]); // @debug NOTE this will break timing.
     return leds[ledno];
 }
 
@@ -95,8 +113,10 @@ uint32_t CalcWSLed(int ledno)
 
     if (registry[REG_BLUE_COMPENSATION] == 1) {
         // Let's reduce them without needing FP.
+        // @todo this needs to be revisited.
         r = (r >> 1) + (r >> 2) + (r >> 3); // 87.5%.
         g = (g >> 1) + (g >> 2) + (g >> 3);
+        // printf("r %u g %u post blue compensation\n", r, g); // @debug
     }
 
     if (registry[REG_GAMMA] == 1) {
@@ -115,10 +135,15 @@ uint32_t CalcWSLed(int ledno)
 }
 
 
+/**
+ * @brief Interrupt handler for WS2812 LED calculations.
+ *
+ * This function is called from Timer3 [*needs verification] interrupt handler and is responsible for
+ * calculating the color for each LED and calling the WS2812BDMAStart() function
+ * to start the DMA transfer of the calculated colors to the LEDs.
+ */
 void WS2812_Handler()
 {
-    // @todo any prep here?
-
     // Iterate through the LEDs and then save the calculated colors.
     for (int i = 0; i < LEDS; i++)
     {

@@ -1,6 +1,9 @@
 #ifndef MAIN_H_
 #define MAIN_H_
 
+// Systick = 48MHz.
+#define FUNCONF_SYSTICK_USE_HCLK 1
+
 #include <ch32v003fun.h>
 
 #include <stdio.h>
@@ -13,11 +16,12 @@
 #include "global.h"
 #include "ws2812.h"
 #include "button.h"
-// #include "effects.h" // @note including breaks everything ;)
 #include "things.h"
 
-// ATRLR 10(-1) and PSC 4800(-1) should result in a 1ms timer.
-#define SOTW_ATRLR 10
-#define SOTW_PSC 4800
+// Number of ticks elapsed per millisecond (48,000 when using 48MHz Clock)
+#define SYSTICK_ONE_MILLISECOND ((uint32_t)FUNCONF_SYSTEM_CORE_CLOCK / 1000)
+
+// Number of ticks elapsed per millisecond (48,000 when using 48MHz Clock)
+#define SYSTICK_ONE_TENTH_MILLISECOND ((uint32_t)FUNCONF_SYSTEM_CORE_CLOCK / 10000)
 
 #endif /* MAIN_H_ */

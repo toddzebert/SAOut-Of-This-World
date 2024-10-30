@@ -17,7 +17,7 @@
     6 = -40℃～85℃ (industrial-grade) 
 
     From ws2812b_dma_spi_led_driver.h:
-        For the CH32V003 this means output will be on PORTC Pin 6
+        For the CH32V003 this means output will be on PORTC Pin 6 (MOSI)
         void DMA1_Channel3_IRQHandler( void );
 
     From i2c_slave.h:
@@ -33,15 +33,17 @@
         PC3 - TBD
         PC4 - TBD
 
-    LED(s):
-        // PC0 = 32 (@debug for now) - did not work! AKA TIM2CH3 (interrupt)
-        // PD7 = 55 (@debug for now) - did not work! AKA NRST (reset/bootloader related), TIM2C4 (interrupt)  
-        PD2 = 50 (@debug for now)
-        PD3 = 51 (@debug for now)
-        PD4 = 52 (@debug for now)
+    GLEDs:
+        PC0
+        PD0
+        PA2
+
+    Sense LEDs:
+        PA1 (+), PD4 (-)
+        PD3 (+), PD2 (-)
     
     For UART printf, on:
-		CH32V003, Port D5, 115200 8n1
+		CH32V003, Port PD5 (UTX, plus PD6/URX), 115200 8n1
 */
 
 /*
@@ -51,17 +53,18 @@ The I2C (inter-IC) bus can transfer data at different speeds, including:
     Fast mode plus: 1 Mbit/s 
     High-speed mode: 3.4 Mbit/s 
     Ultra-fast mode: 5 Mbit/s 
-
-
 */
 
 #include "main.h"
 
 // Stars GPIO pins.
-// @debug PC0 (32), PD7 (55) did not work for unknown reasons.
-const uint8_t stars_gpio_pins[STARS_GPIO_PINS_NUM] = { 50, 51, 52 };
+const uint8_t stars_gpio_h_pins[STARS_GPIO_H_PINS_NUM] = { PC0, PD0, PA2, PA1, PD3 };
+const uint8_t stars_gpio_l_pins[STARS_GPIO_H_PINS_NUM] = { PD4, PD2 };
 
+// Timers.
 volatile uint8_t timer_tick = 0;
+volatile uint8_t timer_tick_count = 0;
+volatile uint8_t timer_tock = 0;
 
 // I2C.
 #define I2C_ADDRESS 0x09
@@ -75,68 +78,48 @@ const uint8_t reg_reserved_ro[REG_RESERVED_RO_LENGTH] = {
     // @todo more?
 };
 
-// @todo take gamma into account
-// https://hackaday.com/2016/08/23/rgb-leds-how-to-master-gamma-and-hue-for-perfect-brightness/ .
+void systick_init(void)
+{
+    // See https://github.com/cnlohr/ch32v003fun/blob/master/examples/systick_irq/systick_irq.c .
+	// Reset any pre-existing configuration
+	SysTick->CTLR = 0x0000;
+	
+	// Set the compare register to trigger once per millisecond
+	SysTick->CMP = SYSTICK_ONE_MILLISECOND - 1;
 
-
-/**
- * @brief Initializes the timer for the 1ms tick.
- *
- * The settings used are:
- * - TIM1 is enabled and used.
- * - The counter mode is Up-Counter.
- * - The clock division is 1.
- * - The master mode is set to Update.
- * - The Auto-Reload value is set to 10 (1ms).
- * - The Prescaler is set to 48000.
- * - The Recurring Count Value is set to 0.
- * - The Event Generation is set to Immediate.
- * - The interrupt is enabled and the flag is cleared.
- * - The DMA/Interrupt enable register is set to Update.
- * - The Counter Enable bit is set.
- * 
- * Adapated from https://github.com/cnlohr/ch32v003fun/blob/master/examples/adc_fixed_fs/adc_fixed_fs.c .
- * TIM1C1 uses PD2.
- */
-void init_timer() {
-    // @todo change to use TIM2? Would also change ISR name.
-    RCC->APB2PCENR |= RCC_APB2Periph_TIM1; // > APB2 peripheral clock enable register.
-    // @todo why both TIM1CH1 and ...CH2?
-    TIM1->CTLR1 |= TIM_CounterMode_Up | TIM_CKD_DIV1;
-    TIM1->CTLR2 = TIM_MMS_1; // @debug CAN WE DO WITHOUT THIS?
-    
-    TIM1->ATRLR = SOTW_ATRLR-1; // > Auto-reload value register; the counter stops when ATRLR is empty.
-    TIM1->PSC = SOTW_PSC-1; // > Counting clock prescaler.
-    TIM1->RPTCR = 0; // > Recurring count value register.
-    TIM1->SWEVGR = TIM_PSCReloadMode_Immediate; // > Event generation register.
-
-    NVIC_EnableIRQ(TIM1_UP_IRQn); // (TIM1 Update Interrupt)
-    TIM1->INTFR = ~TIM_FLAG_Update; // > Interrupt status register. 
-    TIM1->DMAINTENR |= TIM_IT_Update; // > DMA/interrupt enable register.
-    TIM1->CTLR1 |= TIM_CEN;
+	// Reset the Count Register.
+	SysTick->CNT = 0x00000000;
+	
+	// Set the SysTick Configuration
+	// NOTE: By not setting SYSTICK_CTLR_STRE, we maintain compatibility with
+	// busywait delay funtions used by ch32v003_fun.
+	SysTick->CTLR |= SYSTICK_CTLR_STE   |  // Enable Counter
+	                 SYSTICK_CTLR_STIE  |  // Enable Interrupts
+	                 SYSTICK_CTLR_STCLK ;  // Set Clock Source to HCLK/1
+	
+	// Enable the SysTick IRQ
+	NVIC_EnableIRQ(SysTicK_IRQn);
 }
 
-// Both adapted from https://github.com/cnlohr/ch32v003fun/blob/master/examples/adc_fixed_fs/adc_fixed_fs.c .
-void TIM1_UP_IRQHandler(void) __attribute__((interrupt));
-/**
- * @brief Interrupt handler for the TIM1 Update Interrupt.
- *
- * This function is called whenever the TIM1 counter has reached its
- * Auto-Reload value and the counter has been reloaded with the value
- * of the Auto-Reload register.
- *
- * The interrupt flag is reset by writing the opposite value of the flag
- * into the Interrupt Status Register.
- */
-void TIM1_UP_IRQHandler() {
+// Ticks are 10ths of a millisecond. Tocks are 1ms.
+void SysTick_Handler(void) __attribute__((interrupt));
+void SysTick_Handler(void)
+{
+    timer_tick_count++; // 1's indexed.
     timer_tick = 1;
 
-    // Reset the timer interrupt flag.
-    if(TIM1->INTFR & TIM_FLAG_Update) {
-        TIM1->INTFR = ~TIM_FLAG_Update;
+    if (timer_tick_count == 10)
+    {
+        timer_tick_count = 0;
+        timer_tock = 1;
     }
-}
 
+    // Set the compare register to trigger once per 10th millisecond.
+    SysTick->CMP += SYSTICK_ONE_TENTH_MILLISECOND; // @debug was SYSTICK_ONE_MILLISECOND;
+
+	// Clear the trigger state for the next IRQ
+	SysTick->SR = 0x00000000;
+}
 
 // Init non-i2c GPIO.
 void init_gpio() {
@@ -144,23 +127,32 @@ void init_gpio() {
     // ... so place this below the i2c init.
 
     // Stars LEDs.
-    for (int i = 0; i < STARS_GPIO_PINS_NUM; i++) {
-        funPinMode(stars_gpio_pins[i] , GPIO_Speed_10MHz | GPIO_CNF_OUT_PP );
+    for (int i = 0; i < STARS_GPIO_H_PINS_NUM; i++)
+    {
+        funPinMode(stars_gpio_h_pins[i], GPIO_Speed_10MHz | GPIO_CNF_OUT_PP );
+    }
+    
+    // These are the Sense (star) LEDs.
+    for (int i = 0; i < STARS_GPIO_L_PINS_NUM; i++)
+    {
+        funPinMode(stars_gpio_l_pins[i], GPIO_Speed_10MHz | GPIO_CNF_OUT_PP );
+        funDigitalWrite( stars_gpio_h_pins[i], FUN_LOW );
     }
 }
 
-
+// @todo move this to stars.c.
 void starsUpdate()
 {
-    for (int i = 0; i < STARS_GPIO_PINS_NUM; i++) {
+    for (int i = 0; i < STARS_GPIO_H_PINS_NUM; i++) {
         // We'll let the compiler optimize this away.
         // @todo or maybe use: !!registry[REG_STARS_LED_START + i]
         if (registry[REG_STARS_LED_START + i])
         {
-            funDigitalWrite( stars_gpio_pins[i], FUN_HIGH );
+            funDigitalWrite( stars_gpio_h_pins[i], FUN_HIGH );
         }
-        else {
-            funDigitalWrite( stars_gpio_pins[i], FUN_LOW );
+        else
+        {
+            funDigitalWrite( stars_gpio_h_pins[i], FUN_LOW );
         }
     }   
 }
@@ -170,6 +162,13 @@ void copyInRegReservedGlobal()
     // @todo future use?
 }
 
+/**
+ * @brief Copy the "read-only" registry values from the reserved constants to the actual registry.
+ *
+ * While it's intended to be called once at startup, it'll be called again if the registry is changed.
+ *
+ * @note This function exists since the lib doesn't support R/O registers.
+ */
 void copyInRegReservedRO()
 {
     constToRegCopy(registry, 0, reg_reserved_ro, 0, sizeof(reg_reserved_ro) * sizeof(uint8_t));
@@ -189,6 +188,7 @@ void onI2cWrite(uint8_t reg, uint8_t length) {
     // Check protected "RO" registers and replace with our settings.
     // @debug untested.
     if (reg < REG_RESERVED_RO_LENGTH) copyInRegReservedRO();
+    // @todo issue reg event.
 }
 
 
@@ -239,67 +239,87 @@ int main()
     // Must be below init_i2c().
     init_gpio();
 
-    // Let things settle.
-    Delay_Ms( 200 );
+    Delay_Ms( 200 ); // Let things settle.
 
     copyInRegReservedRO();
 
     copyInRegReservedGlobal();
 
+    // printNon0Reg(registry); // @debug
+
     // funDigitalWrite( PC0, FUN_HIGH ); // @debug
-    // Delay_Ms( 2000 ); // @debug
+    Delay_Ms( 200 ); // Let things settle.
+
+    // Init button1. @debug its broken since moving to fun*() usage.
+    // @debug temp: button1Init();
 
     // Init "things".
-    button1Init();
-
     // @todo All the things inits should be done more dymamicly.
-    eyesHandler(1);
-    starsHandler(1);
-    upperTrimHandler(1);
-    lowerTrimHandler(1);
+    Event_t event_init;
+    event_init.type = EVENT_INIT;
+    eyesHandler(event_init);
+    starsHandler(event_init);
+    upperTrimHandler(event_init);
+    lowerTrimHandler(event_init);
 
     // WS2812 init and initial "start" to render. Must go after all "things" inits, ...Handler(1)'s.
     WS2812_Init();
 
-    init_timer();
+    // @debug was used for dev, but not anymore (maybe). init_timer();
 
     // Let things settle.
-    Delay_Ms( 100 );
+    Delay_Ms( 200 );
 
     // Prep for main loop.
     int ws_dirty = 0;
     int stars_dirty = 0;
 
+    Event_t event_run;
+    event_run.type = EVENT_RUN;
+
+    systick_init();
+
+    // printf("In main, thing_timer[THING_EYES]: %d\n", thing_timer[THING_EYES]); // @debug
+    printf("In main, right before loop.\n"); // @debug
+
     while(1)
     {
-        // @todo button(s) occasional polling and debounce here.
+        // @todo button(s) occasional polling and debounce here, and create event.
 
-        if (timer_tick) {
+        if (timer_tick)
+        {
             timer_tick = 0;
 
+            // @todo do what we want here.
+        }
+
+        if (timer_tock)
+        {
+            timer_tock = 0;
             // Handle button1.
             button1_timer--;
             if ( button1_timer == 0 ) button1Handler();
 
             // Handle Eyes.
-            thing_timer[THING_EYES]--;
-            if ( thing_timer[THING_EYES] == 0 )
+            thing_tock_timer[THING_EYES]--;
+            if ( thing_tock_timer[THING_EYES] == 0 )
             {
-                ws_dirty = eyesHandler(0) || ws_dirty;
+                // printf("In main, thing_timer[THING_EYES] == 0.\n"); // @debug
+                ws_dirty = eyesHandler(event_run) || ws_dirty;
             }
 
             // Handle Upper Trim.
-            thing_timer[THING_UPPER_TRIM]--;
-            if ( thing_timer[THING_UPPER_TRIM] == 0 )
+            thing_tock_timer[THING_UPPER_TRIM]--;
+            if ( thing_tock_timer[THING_UPPER_TRIM] == 0 )
             {
-                ws_dirty = upperTrimHandler(0) || ws_dirty;
+                ws_dirty = upperTrimHandler(event_run) || ws_dirty;
             }
 
             // Handle Lower Trim.
-            thing_timer[THING_LOWER_TRIM]--;
-            if ( thing_timer[THING_LOWER_TRIM] == 0 )
+            thing_tock_timer[THING_LOWER_TRIM]--;
+            if ( thing_tock_timer[THING_LOWER_TRIM] == 0 )
             {
-                ws_dirty = lowerTrimHandler(0) || ws_dirty;
+                ws_dirty = lowerTrimHandler(event_run) || ws_dirty;
             }
 
             // This should always be at the end, after all WS Things handlers.
@@ -309,16 +329,16 @@ int main()
             }
 
             // Handle Stars (not a WS Thing).
-            thing_timer[THING_STARS]--;
-            if ( thing_timer[THING_STARS] == 0 )
+            thing_tock_timer[THING_STARS]--;
+            if ( thing_tock_timer[THING_STARS] == 0 )
             {
-                stars_dirty = starsHandler(0) || stars_dirty; // The or is unnecessary, but for the sake of consistency...
+                stars_dirty = starsHandler(event_run) || stars_dirty; // The || is unnecessary, but for the sake of consistency...
             }
 
             // This could be a part of the Stars handler, but for the sake of consistency, it's here.
             if (stars_dirty) {
                 stars_dirty = 0;
-                starsUpdate(); // @todo.
+                starsUpdate(); // @todo ?
             }
         }
     }

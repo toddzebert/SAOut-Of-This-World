@@ -2,21 +2,23 @@
 
 uint8_t upper_trim_effect;
 
-int upperTrimHandler(int flag)
+int upperTrimHandler(Event_t event)
 {
     // printf("upperTrimHandler\n"); // @debug
 
-    upper_trim_effect = registry[reg_thing_start[THING_UPPER_TRIM]] | EFFECT_WS_COMET;
+    upper_trim_effect = registry[reg_thing_start[THING_UPPER_TRIM]];
+    if (!upper_trim_effect) upper_trim_effect = EFFECT_WS_ROTATE; // @debug
 
     switch (upper_trim_effect)
     {
     case EFFECT_RAW:
-        return effect_raw(THING_UPPER_TRIM, flag);
-        break;
+        return effect_raw(THING_UPPER_TRIM, event);
 
     case EFFECT_WS_COMET:
-        return effect_ws_comet(THING_UPPER_TRIM, flag);
-        break;
+        return effect_ws_comet(THING_UPPER_TRIM, event);
+
+    case EFFECT_WS_ROTATE:
+        return effect_ws_rotate(THING_UPPER_TRIM, event);
     
     default:
         // @todo what to do if given invalid effect?
