@@ -31,7 +31,11 @@ The MCU is the CH32V003F4U6 (QFN-20) chip, with 2 buttons, 16 WS2812s (in one ch
 
 ## Tick/Tock
 
-`SysClick` is used to create a synchronous 0.1ms "tick", and every 10 there's a "tock" (1ms). The main loop runs on the tocks. The tick is meant to provide PWM of the LEDs.
+`SysClick` is used to create a synchronous 0.1ms "tick", and every 10 there's a "tock" (1ms). The main loop runs on the tocks. The tick is meant to provide PWM of the LEDs (unimplemented as of yet).
+
+## i2c Use
+@todo
+
 
 ## TODO & Progress
 
@@ -44,6 +48,7 @@ The MCU is the CH32V003F4U6 (QFN-20) chip, with 2 buttons, 16 WS2812s (in one ch
 * [Hold] Sense LEDs
 * Make LEDs PWM - int. convo https://discord.com/channels/@me/1170888366540197899/1301040627512770580 
 * Enhance and add Effects
+
 
 ## Future ideas
 
