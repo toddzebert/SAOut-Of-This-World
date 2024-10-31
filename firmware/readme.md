@@ -15,34 +15,42 @@ At its core, its a synchronous finite state machine; it's not (directly) event-d
 
 It uses the [ch32v003fun](https://github.com/cnlohr/ch32v003fun) "environment" to avoid the manufacturer's weighty HAL/EVT; the community around it has been very helpful. We also use PlatformIO to build the project.
 
-Conceptually, initially an init event is passed to each Thing. Then there's the main loop, which communicates with Things, which in turn communicates with Effects. Effects each have a timer, based on tocks, associated with a Thing. When the timer expires, a run event is passed to each Thing which in turn passes on the event to the Effect. Other input events are passed similarly via the main loop. Another way of thinking about it is kinda like PubSub, but Things don't have to "subscribe", we "publish" all events to all Things (then passed on to Effects). Currently, Effects return a "dirty" flag, which is then returned by the corresponding Thing, to alert the main loop that the WS2812s need to be updated.
+Conceptually, initially an init Event is passed to each Thing. Then there's the main loop, which communicates with Things. There are two types of Things: input and output. Output Things (like Stars,Eyes, Trim) are associated with and communicate with Effects (like Twinkle, Blink, Rotate). Input Things (like Buttons, GPIO) do not have associated Effects.
 
-Other input events include i2c writes, buttons and the "sense" LEDs.
+Effects each have a timer, based on tocks, associated with a Thing. When the timer expires, a Run Event is passed to each Thing which in turn passes on the event to the Effect. Other input events are passed similarly via the main loop.
 
-While both Things and Effects maintain there own UML "action" state (ENTER, GO, EXIT, etc), so far there's no need for Things to do so. Effects also maintain their own internal state as needed.
+Another way of thinking about it is kinda like PubSub, but Things don't have to "subscribe", we "publish" all events to all Things (then passed on to Effects). Currently, Effects return a "dirty" flag, which is then returned by the corresponding Thing, to alert the main loop that the WS2812s need to be updated.
 
-The next most important concept is the "registry". Because this SAO is meant to be an i2c target, all the settings and outputs are stored in the registry. The i2c library modifies the registry directly when it receives a write. Things and Effects depend on both reading and writing to the registry. Any i2c controller can switch Effect "modes", settings, or even controll the LEDs and WS2812s directly using the "Raw" Effect.
+Other input events include i2c writes, (SAO) GPIO inputs, buttons and the "sense" LEDs. Most are "polled" with the exception of the i2c writes (handled by an ISR). Polled Things return an Event, to be processed in the main loop. The i2c is unique and isn't really a Thing; it "sends" Events by setting a "Global Event" var which again, is processed in the main loop. 
+
+While both Things and Effects maintain there own UML "action" state (ENTER, GO, EXIT, etc), as do "output" Things, but so far there's no need for "output" Things to do so. Things and Effects also maintain their own internal state, as needed.
+
+The next most important concept is the "registry". Because this SAO is meant to be an i2c target, all the settings and outputs are stored in the registry. The i2c library modifies the registry directly when it receives a write. Things and Effects depend on both reading and writing to the registry. Any i2c controller can switch Effect "modes", settings, or even control the LEDs and WS2812s directly using the "Raw" Effect.
 
 The MCU is the CH32V003F4U6 (QFN-20) chip, with 2 buttons, 16 WS2812s (in one channel) and five LEDs, two of which are wired special - see the hardware readme.
 
 ## Tick/Tock
+
 `SysClick` is used to create a synchronous 0.1ms "tick", and every 10 there's a "tock" (1ms). The main loop runs on the tocks. The tick is meant to provide PWM of the LEDs.
 
+## TODO & Progress
 
-## TODO
-
-* Fix "PA" GPIO pins - in progress.
-* Fix Comet effect
+* [It defies resolution] Fix "PA" GPIO pins
+* [Deprioritized] Fix Comet effect
 * Finish & test i2c. Probably need a "dirty" reg entry.
-* Finish & test buttons
-* Make LEDs PWM - see https://discord.com/channels/@me/1170888366540197899/1301040627512770580 
-* Add more effects
+* [Done] Events base code
+* [Emit done, "listeners" unstarted] Things' (input) events.
+* [having pull-up/debounce issues] Buttons
+* [Hold] Sense LEDs
+* Make LEDs PWM - int. convo https://discord.com/channels/@me/1170888366540197899/1301040627512770580 
+* Enhance and add Effects
 
 ## Future ideas
 
 * Right now Things and Effects return `dirty` to alert the main loop that the WS' need to be updated, and timing intervals (delays) are set in a global var. I'd like to uncouple that so they return a struct with both dirty and delay, and maybe more. I want to avoid putting too much on the stack though, although I suspect the call stack is never more than a few calls deep: Main Loop, Thing, Effect handler, Effect State handler, and perhaps a helper routine. There's no recursion.
 * Twinkle effect: add normally on and normally off modes.
 * Add the "CC3K" effect.
+* Move i2c stuff from main to its own file, and DRY out `main()` including the main loop.
 
 ## CH32V003FUN Platform Notes
 
