@@ -15,9 +15,9 @@
 | SCL     | SCL        |  9  | PC2                      |
 | PC3     | Button1    | 10  |                          |
 | PC4     | Button2    | 11  |                          |
-|         | N/C        | 12  |                          |
+| PC5     | SAO GPIO2  | 12  |                          |
 | MOSI    | Neopixel   | 13  | PC6                      |
-|         | N/C        | 14  | PC7                      |
+| PC7     | SAO GPIO1  | 14  |                          |
 | SWIO    | SWIO       | 15  | PD1, Programer, exp. pad |
 | PD2     | SenseLED2- | 16  |                          |
 | PD3     | SenseLED2+ | 17  |                          |
