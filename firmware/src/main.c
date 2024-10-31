@@ -62,6 +62,7 @@ const uint8_t reg_reserved_ro[REG_RESERVED_RO_LENGTH] = {
     // @todo more?
 };
 
+
 void systick_init(void)
 {
     // See https://github.com/cnlohr/ch32v003fun/blob/master/examples/systick_irq/systick_irq.c .
@@ -138,6 +139,17 @@ void onI2cWrite(uint8_t reg, uint8_t length) {
     // @debug untested.
     if (reg < REG_RESERVED_RO_LENGTH) copyInRegReservedRO();
     // @todo issue reg event.
+
+    if (global_event.type == EVENT_NONE)
+    {
+        global_event.type = EVENT_REG_CHANGE;
+        global_event.data.reg_change.reg = reg;
+        global_event.data.reg_change.length = length;
+    }
+    else
+    {
+        // @todo what to do here? can't do a wait.
+    }
 }
 
 
@@ -209,6 +221,9 @@ int main()
     upperTrimHandler(event_init);
     lowerTrimHandler(event_init);
 
+    // @todo disabled until the button pull-up and debounce are fixed.
+    // buttonHandler(event_init);
+
     // WS2812 init and initial "start" to render. Must go after all "things" inits, ...Handler(1)'s.
     WS2812_Init();
 
@@ -224,28 +239,56 @@ int main()
     Event_t event_run;
     event_run.type = EVENT_RUN;
 
+    Event_t global_event_working;
+
     systick_init();
 
-    // printf("In main, thing_timer[THING_EYES]: %d\n", thing_timer[THING_EYES]); // @debug
     printf("In main, right before loop.\n"); // @debug
 
     while(1)
     {
-        // @todo button(s) occasional polling and debounce here, and create event.
+        // Currently this is only for i2c ISR support.
+        if (global_event.type != EVENT_NONE)
+        {
+            global_event_working = global_event;
+
+            printf("In main, global_event.type %d\n", global_event.type); // @debug
+            
+            // Clear GE...Make it avail as soon as possible!
+            // global_event.type = EVENT_NONE; // @debug seems ok?
+            global_event = Event_None;
+            // @todo but what about data?
+
+            // @todo...more?
+            eyesHandler(global_event_working);
+            starsHandler(global_event_working);
+            upperTrimHandler(global_event_working);
+            lowerTrimHandler(global_event_working);
+
+            // global_event_working.type = EVENT_NONE; // @debug...
+            global_event_working = Event_None;
+        }
 
         if (timer_tick)
         {
             timer_tick = 0;
 
-            // @todo do what we want here.
+            // @todo do what we want here. LEDs, maybe?
         }
 
         if (timer_tock)
         {
             timer_tock = 0;
-            // Handle button1.
-            button1_timer--;
-            if ( button1_timer == 0 ) button1Handler();
+
+            // Handle buttons.
+            thing_tock_timer[THING_BUTTONS]--;
+            if ( thing_tock_timer[THING_BUTTONS] == 0 ) {
+                // @todo disabled until the button pull-up and debounce are fixed.
+                // Also, perhaps this should go higher in the loop so the event can be processed
+                // as part of the existing global event handling conditional.
+                // button_event = buttonHandler(event_run);
+                // @todo handle button_event.
+            }
 
             // Handle Eyes.
             thing_tock_timer[THING_EYES]--;

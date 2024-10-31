@@ -5,14 +5,16 @@
 
 // #pragma message ("In global.h") // @debug
 
-#define THING_COUNT 4
+#define THING_COUNT 6
 
 // Things.
 typedef enum {
     THING_STARS,
     THING_EYES,
     THING_UPPER_TRIM,
-    THING_LOWER_TRIM
+    THING_LOWER_TRIM,
+    THING_BUTTONS,
+    THING_GPIOS
 } Things_t;
 
 extern Things_t thing;
@@ -29,10 +31,13 @@ extern State_Action_t state_action[THING_COUNT];
 
 // The next bunch of statements support Events.
 typedef enum {
+    EVENT_NONE,
     EVENT_INIT,
     EVENT_RUN,
     EVENT_REG_CHANGE,
     EVENT_BUTTON,
+    EVENT_SENSE,
+    EVENT_GPIO
 } Event_Type_t;
 
 // @debug probably unneeded.
@@ -45,23 +50,41 @@ typedef struct {
     uint16_t data; // placeholder
 } Event_Run_Data_t;
 
+// See onI2cWrite().
 typedef struct {
-    Event_Type_t type;
     uint8_t reg;
     uint8_t length;
 } Event_Reg_Change_Data_t;
 
+
+typedef enum {
+    BUTTON_NONE,
+    BUTTON_PRESSED,
+    BUTTON_RELEASED,
+    BUTTON_LONG_PRESSED,
+    BUTTON_DOUBLE_PRESSED
+} Button_Event_Type_t;
+
+typedef struct {
+    uint8_t num;
+    Button_Event_Type_t type;
+} Event_Button_Data_t;
+
 typedef union {
-    // Event_Init_Data_t init;
-    // Event_Run_Data_t run;
+    // Event_Init_Data_t init; // not needed...?
+    // Event_Run_Data_t run; // not needed...?
     Event_Reg_Change_Data_t reg_change;
-    // @todo button.
+    Event_Button_Data_t button;
+    // @todo the rest...
 } Event_Data_t;
 
 typedef struct {
     Event_Type_t type;
     Event_Data_t data;
 } Event_t;
+
+extern Event_t global_event;
+extern const Event_t Event_None;
 
 #define STARS_COUNT 5 // (white LEDs via GPIO)
 #define EYES_COUNT 2 // (WS2812B)

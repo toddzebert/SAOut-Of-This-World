@@ -13,8 +13,8 @@ int starsHandler(Event_t event)
 {
     // printf("starsHandler\n"); // @debug
     if (event.type == EVENT_INIT)
-        {
-            for (int i = 0; i < STARS_GPIO_H_PINS_NUM; i++)
+    {
+        for (int i = 0; i < STARS_GPIO_H_PINS_NUM; i++)
         {
             funPinMode(stars_gpio_h_pins[i], GPIO_Speed_10MHz | GPIO_CNF_OUT_PP );
         }

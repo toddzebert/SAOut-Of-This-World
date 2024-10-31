@@ -13,8 +13,8 @@
 | PC0     | GLED1      |  7  |                          |
 | SDA     | SDA        |  8  | PC1                      |
 | SCL     | SCL        |  9  | PC2                      |
-| PC3     | Button1    | 10  |                          |
-| PC4     | Button2    | 11  |                          |
+| PC3     | Button1    | 10  | to GND, Pull-up          |
+| PC4     | Button2    | 11  | to GND, Pull-up          |
 | PC5     | SAO GPIO2  | 12  |                          |
 | MOSI    | Neopixel   | 13  | PC6                      |
 | PC7     | SAO GPIO1  | 14  |                          |

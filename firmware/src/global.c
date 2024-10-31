@@ -17,6 +17,15 @@ uint16_t thing_tock_timer[THING_COUNT];
 
 State_Action_t state_action[THING_COUNT];
 
+Event_t global_event = {
+    .type = EVENT_NONE
+};
+
+const Event_t Event_None = {
+    .type = EVENT_NONE
+};
+
+
 const uint8_t reg_thing_start[THING_COUNT] = {
     REG_STARS_START,
     REG_EYES_START,

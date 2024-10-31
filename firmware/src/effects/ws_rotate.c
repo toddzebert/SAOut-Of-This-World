@@ -40,7 +40,6 @@ const uint8_t ws_rotate_defaults[] = {
     128, // Frequency_default = 32; // @debug
 };
 
-
 typedef struct 
 {
     // Yes, it's reversed.
