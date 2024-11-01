@@ -43,7 +43,7 @@ The MCU is the CH32V003F4U6 (QFN-20) chip, with 2 buttons, 16 WS2812s (in one ch
 * [Deprioritized] Fix Comet effect
 * Finish & test i2c. Probably need a "dirty" reg entry.
 * [Done] Events base code
-* [Emit done, "listeners" unstarted] Things' (input) events.
+* [Emit done, queue added, "listeners" unstarted] Things' (input) events.
 * [having pull-up/debounce issues] Buttons
 * [Hold] Sense LEDs
 * Make LEDs PWM - int. convo https://discord.com/channels/@me/1170888366540197899/1301040627512770580 
@@ -52,6 +52,7 @@ The MCU is the CH32V003F4U6 (QFN-20) chip, with 2 buttons, 16 WS2812s (in one ch
 
 ## Future ideas
 
+* The mismatch of the length of `enum Things_t` and arrays such as `reg_thing_start[]` could be an issue in the future.
 * Right now Things and Effects return `dirty` to alert the main loop that the WS' need to be updated, and timing intervals (delays) are set in a global var. I'd like to uncouple that so they return a struct with both dirty and delay, and maybe more. I want to avoid putting too much on the stack though, although I suspect the call stack is never more than a few calls deep: Main Loop, Thing, Effect handler, Effect State handler, and perhaps a helper routine. There's no recursion.
 * Twinkle effect: add normally on and normally off modes.
 * Add the "CC3K" effect.
@@ -61,6 +62,7 @@ The MCU is the CH32V003F4U6 (QFN-20) chip, with 2 buttons, 16 WS2812s (in one ch
 
 * To get a random binary: `rnd_fun(0, 1) & 0x01)`
 * To get a 0-255 randomly: `(uint8_t)rnd_fun(0, 1)`
+* It does not support `malloc`.
 
 ## Thanks.
 Special thanks to cnlohr for the [ch32v003fun](https://github.com/cnlohr/ch32v003fun) project,

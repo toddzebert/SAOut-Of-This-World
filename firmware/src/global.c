@@ -17,14 +17,10 @@ uint16_t thing_tock_timer[THING_COUNT];
 
 State_Action_t state_action[THING_COUNT];
 
-Event_t global_event = {
-    .type = EVENT_NONE
-};
-
 const Event_t Event_None = {
-    .type = EVENT_NONE
+    .type = EVENT_NONE,
+    .thing = THING_NONE
 };
-
 
 const uint8_t reg_thing_start[THING_COUNT] = {
     REG_STARS_START,
@@ -41,6 +37,78 @@ const uint8_t reg_thing_led_start[THING_COUNT] = {
 };
 
 const uint8_t RGB_Black[3] = {0, 0, 0};
+
+#define EVENT_QUEUE_SIZE 16
+Event_t Event_queue[EVENT_QUEUE_SIZE];
+uint8_t Event_Queue_head = EVENT_QUEUE_SIZE - 1;
+uint8_t Event_Queue_tail = EVENT_QUEUE_SIZE - 1;
+uint8_t Event_Queue_count = 0;
+
+/**
+ * Checks if the event queue is empty.
+ *
+ * @return true if the event queue is empty, false otherwise.
+ */
+bool eventQueueEmpty() {
+    // printf("EventQueueEmpty, count: %d\n", Event_Queue_count); // @debug
+    return Event_Queue_count == 0;
+}
+
+/**
+ * Checks if the event queue is full.
+ *
+ * @return true if the event queue is full, false otherwise.
+ */
+bool eventQueueFull() {
+    printf("EventQueueFull, count: %d\n", Event_Queue_count); // @debug
+    return Event_Queue_count == EVENT_QUEUE_SIZE;
+}
+
+/**
+ * Adds an event to the event queue if there is space available.
+ *
+ * @param event The event to be added to the queue.
+ * @return true if the event was successfully added, false if the queue is full.
+ */
+bool eventPush(Event_t event) {
+    printf( "In eventPush, event.type %d, thing %d\r\n", event.type, event.thing ); // @debug
+    if (eventQueueFull()) return false;
+
+    // Add Event and decrement after.
+    Event_queue[Event_Queue_head--] = event;
+    Event_Queue_count++;
+    
+    // Wrap to top if needed.
+    if (Event_Queue_head == 0) Event_Queue_head = EVENT_QUEUE_SIZE - 1;
+
+    return true;
+}
+
+/**
+ * Removes an event from the event queue.
+ *
+ * @return The event at the tail of the queue if the queue is not empty; 
+ *         returns Event_None if the queue is empty.
+ *
+ * This function checks if the event queue is empty and returns Event_None if so.
+ * Otherwise, it retrieves the event at the current tail position, increments 
+ * the tail index, and decreases the event queue count. The tail index wraps 
+ * around to the beginning of the queue if it reaches the end.
+ */
+Event_t eventPop() {
+    printf( "In eventPop\r\n" ); // @debug
+
+    if (eventQueueEmpty()) return Event_None;
+
+    // Get Event and increment after.
+    Event_t event = Event_queue[Event_Queue_tail++];
+    Event_Queue_count--;
+    
+    // Wrap to top if needed.
+    if (Event_Queue_tail == EVENT_QUEUE_SIZE) Event_Queue_tail = 0;
+
+    return event;
+}
 
 /**
  * @brief Copy from array to registry.

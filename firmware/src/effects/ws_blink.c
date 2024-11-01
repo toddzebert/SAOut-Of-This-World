@@ -128,7 +128,10 @@ int effect_ws_blink(Things_t thing, Event_t event)
 
     case EVENT_REG_CHANGE:
         // @note Doesn't need to use event_action.
-        // @todo might need to change state back to enter.    
+        // @todo might need to change state back to enter.
+        // The idea here is to check, using reg, length,
+        // to check if this effect's data has been altered.
+        // If so, copy back any un-changed reg entries to the defaults.  
         // @todo effect_ws_blink_reg_change(thing, event);
 
         return 0;
