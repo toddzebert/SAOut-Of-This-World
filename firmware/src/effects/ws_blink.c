@@ -7,7 +7,7 @@ enum Blink_mode {
     // @todo default = 0?
     Blink_Random = 1,
     Blink_Alternate = 2,
-};
+} __attribute__ ((__packed__));
 
 // Offsets from each "thing" base in the registry.
 // @todo these only apply to Eyes!
