@@ -12,6 +12,8 @@ const uint8_t stars_gpio_l_pins[STARS_GPIO_H_PINS_NUM] = { PD4, PD2 };
 int starsHandler(Event_t event)
 {
     // printf("starsHandler\n"); // @debug
+    if (!(event.thing == THING_STARS || event.thing == THING_ALL)) return 0;
+
     if (event.type == EVENT_INIT)
     {
         for (int i = 0; i < STARS_GPIO_H_PINS_NUM; i++)

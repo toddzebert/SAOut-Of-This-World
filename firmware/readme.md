@@ -52,6 +52,7 @@ The MCU is the CH32V003F4U6 (QFN-20) chip, with 2 buttons, 16 WS2812s (in one ch
 
 ## Future ideas
 
+* The mismatch of the length of `enum Things_t` and arrays such as `reg_thing_start[]` could be an issue in the future.
 * Right now Things and Effects return `dirty` to alert the main loop that the WS' need to be updated, and timing intervals (delays) are set in a global var. I'd like to uncouple that so they return a struct with both dirty and delay, and maybe more. I want to avoid putting too much on the stack though, although I suspect the call stack is never more than a few calls deep: Main Loop, Thing, Effect handler, Effect State handler, and perhaps a helper routine. There's no recursion.
 * Twinkle effect: add normally on and normally off modes.
 * Add the "CC3K" effect.

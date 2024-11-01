@@ -135,21 +135,21 @@ void copyInRegReservedRO()
  * @todo Check protected "RO" registers and replace.
  */
 void onI2cWrite(uint8_t reg, uint8_t length) {
+    // printf("onI2cWrite(%d, %d)\n", reg, length); // @debug
+
     // Check protected "RO" registers and replace with our settings.
     // @debug untested.
     if (reg < REG_RESERVED_RO_LENGTH) copyInRegReservedRO();
     // @todo issue reg event.
 
-    if (global_event.type == EVENT_NONE)
-    {
-        global_event.type = EVENT_REG_CHANGE;
-        global_event.data.reg_change.reg = reg;
-        global_event.data.reg_change.length = length;
-    }
-    else
-    {
-        // @todo what to do here? can't do a wait.
-    }
+    Event_t reg_change_event = {
+        .type = EVENT_REG_CHANGE,
+        .thing = THING_ALL,
+        .data.reg_change.reg = reg,
+        .data.reg_change.length = length
+    };
+
+    eventPush(reg_change_event);
 }
 
 
@@ -213,8 +213,10 @@ int main()
 
     // Init "things".
     // @todo All the things inits should be done more dymamicly.
-    Event_t event_init;
-    event_init.type = EVENT_INIT;
+    const Event_t event_init = {
+        .type = EVENT_INIT,
+        .thing = THING_ALL
+    };
 
     eyesHandler(event_init);
     starsHandler(event_init);
@@ -236,10 +238,12 @@ int main()
     int ws_dirty = 0;
     int stars_dirty = 0;
 
-    Event_t event_run;
-    event_run.type = EVENT_RUN;
-
-    Event_t global_event_working;
+    // @note before this was const, .thing would get corrupted and Things' conditionals would fail,
+    // leading to extreme slowness. Perhaps volatile may have worked?
+    const Event_t event_run = {
+        .type = EVENT_RUN,
+        .thing = THING_ALL
+    };
 
     systick_init();
 
@@ -248,25 +252,16 @@ int main()
     while(1)
     {
         // Currently this is only for i2c ISR support.
-        if (global_event.type != EVENT_NONE)
+        while (!eventQueueEmpty())
         {
-            global_event_working = global_event;
-
-            printf("In main, global_event.type %d\n", global_event.type); // @debug
-            
-            // Clear GE...Make it avail as soon as possible!
-            // global_event.type = EVENT_NONE; // @debug seems ok?
-            global_event = Event_None;
-            // @todo but what about data?
-
-            // @todo...more?
-            eyesHandler(global_event_working);
-            starsHandler(global_event_working);
-            upperTrimHandler(global_event_working);
-            lowerTrimHandler(global_event_working);
-
-            // global_event_working.type = EVENT_NONE; // @debug...
-            global_event_working = Event_None;
+            // printf("in main event while loop.\n"); // @debug
+            Event_t event = eventPop();
+            printf("In main loop event while - type, thing: %d %d\n", event.type, event.thing); // @debug
+         
+            eyesHandler(event);
+            starsHandler(event);
+            upperTrimHandler(event);
+            lowerTrimHandler(event);
         }
 
         if (timer_tick)
@@ -281,7 +276,7 @@ int main()
             timer_tock = 0;
 
             // Handle buttons.
-            thing_tock_timer[THING_BUTTONS]--;
+            // thing_tock_timer[THING_BUTTONS]--;
             if ( thing_tock_timer[THING_BUTTONS] == 0 ) {
                 // @todo disabled until the button pull-up and debounce are fixed.
                 // Also, perhaps this should go higher in the loop so the event can be processed
@@ -290,11 +285,14 @@ int main()
                 // @todo handle button_event.
             }
 
+            // printf("in main loop\n"); // @debug
+
             // Handle Eyes.
             thing_tock_timer[THING_EYES]--;
             if ( thing_tock_timer[THING_EYES] == 0 )
             {
                 // printf("In main, thing_timer[THING_EYES] == 0.\n"); // @debug
+                // printf("event.type %d, event.thing: %d\r\n", event_run.type, event_run.thing);
                 ws_dirty = eyesHandler(event_run) || ws_dirty;
             }
 

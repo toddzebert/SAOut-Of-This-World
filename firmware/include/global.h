@@ -2,6 +2,7 @@
 #define GLOBAL_H_
 
 #include <stdio.h>
+#include <stdbool.h>
 
 // #pragma message ("In global.h") // @debug
 
@@ -14,7 +15,10 @@ typedef enum {
     THING_UPPER_TRIM,
     THING_LOWER_TRIM,
     THING_BUTTONS,
-    THING_GPIOS
+    THING_GPIOS,
+    // Below are not include in THING_COUNT.
+    THING_ALL = 99,
+    THING_NONE = 100
 } Things_t;
 
 extern Things_t thing;
@@ -80,11 +84,19 @@ typedef union {
 
 typedef struct {
     Event_Type_t type;
+    Things_t thing;
     Event_Data_t data;
 } Event_t;
 
-extern Event_t global_event;
 extern const Event_t Event_None;
+ 
+extern bool eventQueueEmpty();
+
+extern bool eventQueueFull();
+
+extern bool eventPush(Event_t event);
+
+extern Event_t eventPop();
 
 #define STARS_COUNT 5 // (white LEDs via GPIO)
 #define EYES_COUNT 2 // (WS2812B)

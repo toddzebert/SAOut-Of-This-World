@@ -19,6 +19,7 @@ Event_t buttonHandler_run(Event_t event);
 Event_t buttonHandler(Event_t event)
 {
     // printf( "In buttonHandler, event.type: %d\r\n", event.type ); // @debug
+    if (!(event.thing == THING_BUTTONS || event.thing == THING_ALL)) return Event_None;
     
     switch (event.type)
     {
