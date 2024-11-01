@@ -18,7 +18,7 @@
 // Number of ticks elapsed per millisecond (48,000 when using 48MHz Clock)
 #define SYSTICK_ONE_MILLISECOND ((uint32_t)FUNCONF_SYSTEM_CORE_CLOCK / 1000)
 
-// Number of ticks elapsed per millisecond (48,000 when using 48MHz Clock)
+// Number of ticks elapsed per tenth of a millisecond (4,800 when using 48MHz Clock)
 #define SYSTICK_ONE_TENTH_MILLISECOND ((uint32_t)FUNCONF_SYSTEM_CORE_CLOCK / 10000)
 
 #endif /* MAIN_H_ */
