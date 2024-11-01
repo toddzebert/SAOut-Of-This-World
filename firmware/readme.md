@@ -43,7 +43,7 @@ The MCU is the CH32V003F4U6 (QFN-20) chip, with 2 buttons, 16 WS2812s (in one ch
 * [Deprioritized] Fix Comet effect
 * Finish & test i2c. Probably need a "dirty" reg entry.
 * [Done] Events base code
-* [Emit done, "listeners" unstarted] Things' (input) events.
+* [Emit done, queue added, "listeners" unstarted] Things' (input) events.
 * [having pull-up/debounce issues] Buttons
 * [Hold] Sense LEDs
 * Make LEDs PWM - int. convo https://discord.com/channels/@me/1170888366540197899/1301040627512770580 
@@ -62,6 +62,7 @@ The MCU is the CH32V003F4U6 (QFN-20) chip, with 2 buttons, 16 WS2812s (in one ch
 
 * To get a random binary: `rnd_fun(0, 1) & 0x01)`
 * To get a 0-255 randomly: `(uint8_t)rnd_fun(0, 1)`
+* It does not support `malloc`.
 
 ## Thanks.
 Special thanks to cnlohr for the [ch32v003fun](https://github.com/cnlohr/ch32v003fun) project,

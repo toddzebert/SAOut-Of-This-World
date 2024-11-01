@@ -193,35 +193,42 @@ int main()
 {
 	SystemInit();
     // Let things settle.
-    Delay_Ms( 200 );
+    Delay_Ms(200);
+
+    // @debug testing this.
+    // AFIO->PCFR1 &= ~AFIO_PCFR1_PA12_REMAP;
+    // see https://discord.com/channels/665433554787893289/1080242396736000100/1301911065231097876 .
 
     init_i2c();
 
-    Delay_Ms( 200 ); // Let things settle.
+    Delay_Ms(200); // Let things settle.
 
     copyInRegReservedRO();
 
     copyInRegReservedGlobal();
 
-    // printNon0Reg(registry); // @debug
-
-    // funDigitalWrite( PC0, FUN_HIGH ); // @debug
     Delay_Ms( 200 ); // Let things settle.
+
+    funGpioInitAll();
+    // @debug testing this.  See above.
+    RCC->APB2PCENR |= RCC_AFIOEN;
+    Delay_Ms(1);
+    AFIO->PCFR1 &= ~AFIO_PCFR1_PA12_REMAP;
 
     // Init button1. @debug its broken since moving to fun*() usage.
     // @debug temp: button1Init();
 
     // Init "things".
     // @todo All the things inits should be done more dymamicly.
-    const Event_t event_init = {
+    const Event_t Event_Init = {
         .type = EVENT_INIT,
         .thing = THING_ALL
     };
 
-    eyesHandler(event_init);
-    starsHandler(event_init);
-    upperTrimHandler(event_init);
-    lowerTrimHandler(event_init);
+    eyesHandler(Event_Init);
+    starsHandler(Event_Init);
+    upperTrimHandler(Event_Init);
+    lowerTrimHandler(Event_Init);
 
     // @todo disabled until the button pull-up and debounce are fixed.
     // buttonHandler(event_init);
@@ -232,7 +239,7 @@ int main()
     // @debug was used for dev, but not anymore (maybe). init_timer();
 
     // Let things settle.
-    Delay_Ms( 200 );
+    Delay_Ms(200);
 
     // Prep for main loop.
     int ws_dirty = 0;
@@ -240,30 +247,20 @@ int main()
 
     // @note before this was const, .thing would get corrupted and Things' conditionals would fail,
     // leading to extreme slowness. Perhaps volatile may have worked?
-    const Event_t event_run = {
+    const Event_t Event_Run = {
         .type = EVENT_RUN,
         .thing = THING_ALL
     };
 
     systick_init();
 
+    // Let things settle.
+    Delay_Ms(200);
+
     printf("In main, right before loop.\n"); // @debug
 
     while(1)
     {
-        // Currently this is only for i2c ISR support.
-        while (!eventQueueEmpty())
-        {
-            // printf("in main event while loop.\n"); // @debug
-            Event_t event = eventPop();
-            printf("In main loop event while - type, thing: %d %d\n", event.type, event.thing); // @debug
-         
-            eyesHandler(event);
-            starsHandler(event);
-            upperTrimHandler(event);
-            lowerTrimHandler(event);
-        }
-
         if (timer_tick)
         {
             timer_tick = 0;
@@ -274,6 +271,19 @@ int main()
         if (timer_tock)
         {
             timer_tock = 0;
+
+            // Use of this should be limited as its expensive.
+            while (!eventQueueEmpty())
+            {
+                // printf("in main event while loop.\n"); // @debug
+                Event_t event = eventPop();
+                printf("In main loop event while - type, thing: %d %d\n", event.type, event.thing); // @debug
+            
+                ws_dirty = eyesHandler(event) || ws_dirty;
+                ws_dirty = starsHandler(event) || ws_dirty;
+                ws_dirty = upperTrimHandler(event) || ws_dirty;
+                ws_dirty = lowerTrimHandler(event) || ws_dirty;
+            }
 
             // Handle buttons.
             // thing_tock_timer[THING_BUTTONS]--;
@@ -293,21 +303,21 @@ int main()
             {
                 // printf("In main, thing_timer[THING_EYES] == 0.\n"); // @debug
                 // printf("event.type %d, event.thing: %d\r\n", event_run.type, event_run.thing);
-                ws_dirty = eyesHandler(event_run) || ws_dirty;
+                ws_dirty = eyesHandler(Event_Run) || ws_dirty;
             }
 
             // Handle Upper Trim.
             thing_tock_timer[THING_UPPER_TRIM]--;
             if ( thing_tock_timer[THING_UPPER_TRIM] == 0 )
             {
-                ws_dirty = upperTrimHandler(event_run) || ws_dirty;
+                ws_dirty = upperTrimHandler(Event_Run) || ws_dirty;
             }
 
             // Handle Lower Trim.
             thing_tock_timer[THING_LOWER_TRIM]--;
             if ( thing_tock_timer[THING_LOWER_TRIM] == 0 )
             {
-                ws_dirty = lowerTrimHandler(event_run) || ws_dirty;
+                ws_dirty = lowerTrimHandler(Event_Run) || ws_dirty;
             }
 
             // This should always be at the end, after all WS Things handlers.
@@ -320,7 +330,7 @@ int main()
             thing_tock_timer[THING_STARS]--;
             if ( thing_tock_timer[THING_STARS] == 0 )
             {
-                stars_dirty = starsHandler(event_run) || stars_dirty; // The || is unnecessary, but for the sake of consistency...
+                stars_dirty = starsHandler(Event_Run) || stars_dirty; // The || is unnecessary, but for the sake of consistency...
             }
 
             // This could be a part of the Stars handler, but for the sake of consistency, it's here.

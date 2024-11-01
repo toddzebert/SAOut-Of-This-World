@@ -18,7 +18,7 @@ State_Action_t eyes_state_phase;
  * @return The return value of the effect function. The meaning of the return
  *         value depends on the effect function.
  */
-int eyesHandler(Event_t event) // was int flag
+int eyesHandler(Event_t event)
 {
     // printf("In eyesHandler - event.type %d, event.thing: %d\r\n", event.type, event.thing);
     // printf("In eyesHandler, event.type: %d\r\n", event.type); // @debug

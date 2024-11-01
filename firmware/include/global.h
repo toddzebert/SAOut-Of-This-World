@@ -8,6 +8,17 @@
 
 #define THING_COUNT 6
 
+// The UML State Actions.
+// @todo replace the enum (32bit) with a define mapped into a uint8_t.
+typedef enum {
+    STATE_ACTION_INIT,
+    STATE_ACTION_ENTER,
+    STATE_ACTION_GO,
+    STATE_ACTION_EXIT
+} __attribute__ ((__packed__)) State_Action_t;
+
+extern State_Action_t state_action[THING_COUNT];
+
 // Things.
 typedef enum {
     THING_STARS,
@@ -19,19 +30,9 @@ typedef enum {
     // Below are not include in THING_COUNT.
     THING_ALL = 99,
     THING_NONE = 100
-} Things_t;
+} __attribute__ ((__packed__)) Things_t;
 
 extern Things_t thing;
-
-// The UML State Actions.
-typedef enum {
-    STATE_ACTION_INIT, // @todo needed?
-    STATE_ACTION_ENTER,
-    STATE_ACTION_GO,
-    STATE_ACTION_EXIT
-} State_Action_t;
-
-extern State_Action_t state_action[THING_COUNT];
 
 // The next bunch of statements support Events.
 typedef enum {
@@ -42,7 +43,7 @@ typedef enum {
     EVENT_BUTTON,
     EVENT_SENSE,
     EVENT_GPIO
-} Event_Type_t;
+} __attribute__ ((__packed__)) Event_Type_t;
 
 // @debug probably unneeded.
 typedef struct {
@@ -60,14 +61,13 @@ typedef struct {
     uint8_t length;
 } Event_Reg_Change_Data_t;
 
-
 typedef enum {
     BUTTON_NONE,
     BUTTON_PRESSED,
     BUTTON_RELEASED,
     BUTTON_LONG_PRESSED,
     BUTTON_DOUBLE_PRESSED
-} Button_Event_Type_t;
+} __attribute__ ((__packed__)) Button_Event_Type_t;
 
 typedef struct {
     uint8_t num;
