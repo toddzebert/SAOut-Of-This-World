@@ -187,6 +187,12 @@ int main()
     // AFIO->PCFR1 &= ~AFIO_PCFR1_PA12_REMAP;
     // see https://discord.com/channels/665433554787893289/1080242396736000100/1301911065231097876 .
 
+    // Due to a lack of pullup resistors on the board, if it's not plugged into
+    // an SAO port with pullups then it's possible for noise to confuse the I2C
+    // inputs into thinking that a transmission has started, and that has the
+    // effect of basically causing the badge to hang.
+    // Comment out this line temporarily if you're developing/debugging without
+    // being connected to an SAO port.
     init_i2c();
 
     copyInRegReservedRO();
@@ -209,6 +215,7 @@ int main()
         .thing = THING_ALL
     };
 
+    buttonHandler(Event_Init);
     eyesHandler(Event_Init);
     starsHandler(Event_Init);
     upperTrimHandler(Event_Init);
@@ -248,6 +255,7 @@ int main()
                 Event_t event = eventPop();
                 printf("In main loop event while - type, thing: %d %d\n", event.type, event.thing); // @debug
             
+                buttonHandler(event);
                 ws_dirty = eyesHandler(event) || ws_dirty;
                 ws_dirty = starsHandler(event) || ws_dirty;
                 ws_dirty = upperTrimHandler(event) || ws_dirty;
@@ -255,13 +263,12 @@ int main()
             }
 
             // Handle buttons.
-            // thing_tock_timer[THING_BUTTONS]--;
+            thing_tock_timer[THING_BUTTONS]--;
             if ( thing_tock_timer[THING_BUTTONS] == 0 ) {
-                // @todo disabled until the button pull-up and debounce are fixed.
                 // Also, perhaps this should go higher in the loop so the event can be processed
                 // as part of the existing global event handling conditional.
-                // button_event = buttonHandler(event_run);
-                // @todo handle button_event.
+                //printf("In main, thing_timer[THING_BUTTONS] == 0.\n");
+                buttonHandler(Event_Run);
             }
 
             // printf("in main loop\n"); // @debug
