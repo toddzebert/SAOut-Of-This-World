@@ -39,10 +39,10 @@ const uint8_t reg_thing_led_start[THING_COUNT] = {
 const uint8_t RGB_Black[3] = {0, 0, 0};
 
 #define EVENT_QUEUE_SIZE 16
-Event_t Event_queue[EVENT_QUEUE_SIZE];
-uint8_t Event_Queue_head = EVENT_QUEUE_SIZE - 1;
-uint8_t Event_Queue_tail = EVENT_QUEUE_SIZE - 1;
-uint8_t Event_Queue_count = 0;
+volatile Event_t Event_queue[EVENT_QUEUE_SIZE];
+volatile uint8_t Event_Queue_head = EVENT_QUEUE_SIZE - 1;
+volatile uint8_t Event_Queue_tail = EVENT_QUEUE_SIZE - 1;
+volatile uint8_t Event_Queue_count = 0;
 
 /**
  * Checks if the event queue is empty.
@@ -72,14 +72,18 @@ bool eventQueueFull() {
  */
 bool eventPush(Event_t event) {
     printf( "In eventPush, event.type %d, thing %d\r\n", event.type, event.thing ); // @debug
-    if (eventQueueFull()) return false;
+    if (eventQueueFull())
+        return false;
 
-    // Add Event and decrement after.
-    Event_queue[Event_Queue_head--] = event;
+    // Add Event.
+    Event_queue[Event_Queue_head] = event;
     Event_Queue_count++;
     
-    // Wrap to top if needed.
-    if (Event_Queue_head == 0) Event_Queue_head = EVENT_QUEUE_SIZE - 1;
+    // Decrement pointer or wrap to top if we can't go lower.
+    if (Event_Queue_head == 0)
+        Event_Queue_head = EVENT_QUEUE_SIZE - 1;
+    else
+        Event_Queue_head--;
 
     return true;
 }
@@ -98,14 +102,18 @@ bool eventPush(Event_t event) {
 Event_t eventPop() {
     printf( "In eventPop\r\n" ); // @debug
 
-    if (eventQueueEmpty()) return Event_None;
+    if (eventQueueEmpty())
+        return Event_None;
 
-    // Get Event and increment after.
-    Event_t event = Event_queue[Event_Queue_tail++];
+    // Get Event.
+    Event_t event = Event_queue[Event_Queue_tail];
     Event_Queue_count--;
     
-    // Wrap to top if needed.
-    if (Event_Queue_tail == EVENT_QUEUE_SIZE) Event_Queue_tail = 0;
+    // Decrement pointer or wrap to top if we can't go lower.
+    if (Event_Queue_tail == 0)
+        Event_Queue_tail = EVENT_QUEUE_SIZE - 1;
+    else
+        Event_Queue_tail--;
 
     return event;
 }
