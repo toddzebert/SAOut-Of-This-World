@@ -10,6 +10,38 @@ int lowerTrimHandler(Event_t event)
     lower_trim_effect = registry[reg_thing_start[THING_LOWER_TRIM]];
     if (!lower_trim_effect) lower_trim_effect = EFFECT_WS_ROTATE;
 
+    // Respond to presses from button 1 (the right one).
+    if (event.type == EVENT_BUTTON &&
+        event.data.button.num == 1 &&
+        event.data.button.type == BUTTON_PRESSED)
+    {
+        // Rotate through the effects.
+        uint8_t next_trim_effect = lower_trim_effect;
+        switch (lower_trim_effect)
+        {
+            case EFFECT_RAW:
+                next_trim_effect = EFFECT_WS_ROTATE;
+                break;
+            case EFFECT_WS_COMET:
+                next_trim_effect = EFFECT_RAW;
+                break;
+            case EFFECT_WS_ROTATE:
+                next_trim_effect = EFFECT_WS_COMET;
+                break;
+            default:
+                next_trim_effect = EFFECT_WS_ROTATE;
+                break;
+        }
+        registry[reg_thing_start[THING_LOWER_TRIM]] = next_trim_effect;
+        Event_t Lower_Trim_Reinit = {
+            .type = EVENT_INIT,
+            .thing = THING_LOWER_TRIM
+        };
+        eventPush(Lower_Trim_Reinit);
+        //printf("lower_trim.c: Changed to %d effect\n", next_trim_effect);
+        return 0;
+    }
+
     switch (lower_trim_effect)
     {
     case EFFECT_RAW:
