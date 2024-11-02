@@ -39,7 +39,7 @@ typedef enum {
     EVENT_NONE,
     EVENT_INIT,
     EVENT_RUN,
-    EVENT_REG_CHANGE,
+    EVENT_REG_CHANGE, // 3
     EVENT_BUTTON,
     EVENT_SENSE,
     EVENT_GPIO

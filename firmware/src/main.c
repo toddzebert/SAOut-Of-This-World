@@ -46,8 +46,6 @@ The I2C (inter-IC) bus can transfer data at different speeds, including:
 #include "main.h"
 
 // Timers.
-volatile uint8_t timer_tick = 0;
-volatile uint8_t timer_tick_count = 0;
 volatile uint8_t timer_tock = 0;
 
 // I2C.
@@ -80,27 +78,20 @@ void systick_init(void)
 	// busywait delay funtions used by ch32v003_fun.
 	SysTick->CTLR |= SYSTICK_CTLR_STE   |  // Enable Counter
 	                 SYSTICK_CTLR_STIE  |  // Enable Interrupts
-	                 SYSTICK_CTLR_STCLK ;  // Set Clock Source to HCLK/1
+	                 SYSTICK_CTLR_STCLK |  // Set Clock Source to HCLK/1
+                     SYSTICK_CTLR_STRE;    // Enable Auto Reload
+    
 	
 	// Enable the SysTick IRQ
-	NVIC_EnableIRQ(SysTicK_IRQn);
+	NVIC_SetPriority(SysTicK_IRQn, 1 << 6);
+    NVIC_EnableIRQ(SysTicK_IRQn);
 }
 
 // Ticks are 10ths of a millisecond. Tocks are 1ms.
 void SysTick_Handler(void) __attribute__((interrupt));
 void SysTick_Handler(void)
 {
-    timer_tick_count++; // 1's indexed.
-    timer_tick = 1;
-
-    if (timer_tick_count == 10)
-    {
-        timer_tick_count = 0;
-        timer_tock = 1;
-    }
-
-    // Set the compare register to trigger once per 10th millisecond.
-    SysTick->CMP += SYSTICK_ONE_TENTH_MILLISECOND; // @debug was SYSTICK_ONE_MILLISECOND;
+    timer_tock = 1;
 
 	// Clear the trigger state for the next IRQ
 	SysTick->SR = 0x00000000;
@@ -140,7 +131,6 @@ void onI2cWrite(uint8_t reg, uint8_t length) {
     // Check protected "RO" registers and replace with our settings.
     // @debug untested.
     if (reg < REG_RESERVED_RO_LENGTH) copyInRegReservedRO();
-    // @todo issue reg event.
 
     Event_t reg_change_event = {
         .type = EVENT_REG_CHANGE,
@@ -168,8 +158,8 @@ void onI2cRead(uint8_t reg) {
 // @debug This is never called directly?
 void init_i2c() {
     // i2c_slave.
-    funPinMode(PC1, GPIO_CFGLR_OUT_10Mhz_AF_OD); // SDA
-    funPinMode(PC2, GPIO_CFGLR_OUT_10Mhz_AF_OD); // SCL
+    funPinMode(PC1, GPIO_CFGLR_OUT_2Mhz_AF_OD); // SDA // @debug was GPIO_CFGLR_OUT_10Mhz_AF_OD.
+    funPinMode(PC2, GPIO_CFGLR_OUT_2Mhz_AF_OD); // SCL // @debug was GPIO_CFGLR_OUT_10Mhz_AF_OD.
 
     // Address, registers, registers length, onWrite callback, onRead callback, read only.
     // > The I2C1 peripheral can also listen on a secondary address. [see Readme]
@@ -192,8 +182,6 @@ void init_i2c() {
 int main()
 {
 	SystemInit();
-    // Let things settle.
-    Delay_Ms(200);
 
     // @debug testing this.
     // AFIO->PCFR1 &= ~AFIO_PCFR1_PA12_REMAP;
@@ -201,25 +189,21 @@ int main()
 
     init_i2c();
 
-    Delay_Ms(200); // Let things settle.
-
     copyInRegReservedRO();
 
     copyInRegReservedGlobal();
 
-    Delay_Ms( 200 ); // Let things settle.
-
     funGpioInitAll();
     // @debug testing this.  See above.
     RCC->APB2PCENR |= RCC_AFIOEN;
-    Delay_Ms(1);
+    //Delay_Ms(1);
     AFIO->PCFR1 &= ~AFIO_PCFR1_PA12_REMAP;
 
     // Init button1. @debug its broken since moving to fun*() usage.
     // @debug temp: button1Init();
 
     // Init "things".
-    // @todo All the things inits should be done more dymamicly.
+    // @todo All the things inits should be done more dynamically.
     const Event_t Event_Init = {
         .type = EVENT_INIT,
         .thing = THING_ALL
@@ -236,11 +220,6 @@ int main()
     // WS2812 init and initial "start" to render. Must go after all "things" inits, ...Handler(1)'s.
     WS2812_Init();
 
-    // @debug was used for dev, but not anymore (maybe). init_timer();
-
-    // Let things settle.
-    Delay_Ms(200);
-
     // Prep for main loop.
     int ws_dirty = 0;
     int stars_dirty = 0;
@@ -254,20 +233,10 @@ int main()
 
     systick_init();
 
-    // Let things settle.
-    Delay_Ms(200);
-
     printf("In main, right before loop.\n"); // @debug
 
     while(1)
     {
-        if (timer_tick)
-        {
-            timer_tick = 0;
-
-            // @todo do what we want here. LEDs, maybe?
-        }
-
         if (timer_tock)
         {
             timer_tock = 0;
@@ -336,8 +305,10 @@ int main()
             // This could be a part of the Stars handler, but for the sake of consistency, it's here.
             if (stars_dirty) {
                 stars_dirty = 0;
-                starsUpdate(); // @todo ?
+                starsUpdate();
             }
         }
     }
+
+    __WFI(); // Wait for Interrupt.
 }

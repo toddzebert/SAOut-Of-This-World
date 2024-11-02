@@ -43,6 +43,8 @@ struct _i2c_slave_state {
     uint8_t size1;
     volatile uint8_t* volatile registers2;
     uint8_t size2;
+    bool addressed1;
+    bool addressed2;
     i2c_write_callback_t write_callback1;
     i2c_read_callback_t read_callback1;
     bool read_only1;
@@ -61,6 +63,8 @@ void SetupI2CSlave(uint8_t address, volatile uint8_t* registers, uint8_t size, i
     i2c_slave_state.size1 = size;
     i2c_slave_state.registers2 = NULL;
     i2c_slave_state.size2 = 0;
+    i2c_slave_state.addressed1 = false;
+    i2c_slave_state.addressed2 = false;
     i2c_slave_state.write_callback1 = write_callback;
     i2c_slave_state.read_callback1 = read_callback;
     i2c_slave_state.read_only1 = read_only;
@@ -86,9 +90,9 @@ void SetupI2CSlave(uint8_t address, volatile uint8_t* registers, uint8_t size, i
     I2C1->CTLR2 |= I2C_CTLR2_ITBUFEN | I2C_CTLR2_ITEVTEN | I2C_CTLR2_ITERREN;
 
     NVIC_EnableIRQ(I2C1_EV_IRQn); // Event interrupt
-    NVIC_SetPriority(I2C1_EV_IRQn, 2 << 4);
+    NVIC_SetPriority(I2C1_EV_IRQn, 0 << 6); // @note increase priority level, same as below.
     NVIC_EnableIRQ(I2C1_ER_IRQn); // Error interrupt
-    NVIC_SetPriority(I2C1_ER_IRQn, 2 << 4);
+    NVIC_SetPriority(I2C1_ER_IRQn, 3 << 6);
 
     // Set clock configuration
     uint32_t clockrate = 1000000; // I2C Bus clock rate, must be lower than the logic clock rate
@@ -138,84 +142,103 @@ void I2C1_EV_IRQHandler(void) {
         i2c_slave_state.first_write = 1; // Next write will be the offset
         i2c_slave_state.position = i2c_slave_state.offset; // Reset position
         i2c_slave_state.address2matched = !!(STAR2 & I2C_STAR2_DUALF);
-    }
-
-    if (STAR1 & I2C_STAR1_RXNE) { // Write event
-        if (i2c_slave_state.first_write) { // First byte written, set the offset
-            i2c_slave_state.offset = I2C1->DATAR;
-            i2c_slave_state.position = i2c_slave_state.offset;
-            i2c_slave_state.first_write = 0;
-            i2c_slave_state.writing = false;
-        } else { // Normal register write
-            i2c_slave_state.writing = true;
-            if (i2c_slave_state.address2matched) {
-                if (i2c_slave_state.position < i2c_slave_state.size2 && !i2c_slave_state.read_only2) {
-                    i2c_slave_state.registers2[i2c_slave_state.position] = I2C1->DATAR;
-                    i2c_slave_state.position++;
-                }
-            } else {
-                if (i2c_slave_state.position < i2c_slave_state.size1 && !i2c_slave_state.read_only1) {
-                    i2c_slave_state.registers1[i2c_slave_state.position] = I2C1->DATAR;
-                    i2c_slave_state.position++;
-                }
-            }
+        if (i2c_slave_state.address2matched) {
+            i2c_slave_state.addressed2 = true;
+        } else {
+            i2c_slave_state.addressed1 = true;
         }
     }
 
-    if (STAR1 & I2C_STAR1_TXE) { // Read event
-        i2c_slave_state.writing = false;
-        if (i2c_slave_state.address2matched) {
-            if (i2c_slave_state.position < i2c_slave_state.size2) {
-                I2C1->DATAR = i2c_slave_state.registers2[i2c_slave_state.position];
-                if (i2c_slave_state.read_callback2 != NULL) {
-                    i2c_slave_state.read_callback2(i2c_slave_state.position);
+    if (i2c_slave_state.addressed1 || i2c_slave_state.addressed2) {
+        if (STAR1 & I2C_STAR1_RXNE) { // Write event
+            if (i2c_slave_state.first_write) { // First byte written, set the offset
+                i2c_slave_state.offset = I2C1->DATAR;
+                i2c_slave_state.position = i2c_slave_state.offset;
+                i2c_slave_state.first_write = 0;
+                i2c_slave_state.writing = false;
+            } else { // Normal register write
+                i2c_slave_state.writing = true;
+                if (i2c_slave_state.address2matched) {
+                    if (i2c_slave_state.position < i2c_slave_state.size2 && !i2c_slave_state.read_only2) {
+                        i2c_slave_state.registers2[i2c_slave_state.position] = I2C1->DATAR;
+                        i2c_slave_state.position++;
+                    }
+                } else {
+                    if (i2c_slave_state.position < i2c_slave_state.size1 && !i2c_slave_state.read_only1) {
+                        i2c_slave_state.registers1[i2c_slave_state.position] = I2C1->DATAR;
+                        i2c_slave_state.position++;
+                    }
                 }
-                i2c_slave_state.position++;
-            } else {
-                I2C1->DATAR = 0x00;
             }
-        } else {
-            if (i2c_slave_state.position < i2c_slave_state.size1) {
-                I2C1->DATAR = i2c_slave_state.registers1[i2c_slave_state.position];
-                if (i2c_slave_state.read_callback1 != NULL) {
-                    i2c_slave_state.read_callback1(i2c_slave_state.position);
+        }
+
+        if (STAR1 & I2C_STAR1_TXE) { // Read event
+            i2c_slave_state.writing = false;
+            if (i2c_slave_state.address2matched) {
+                if (i2c_slave_state.position < i2c_slave_state.size2) {
+                    I2C1->DATAR = i2c_slave_state.registers2[i2c_slave_state.position];
+                    if (i2c_slave_state.read_callback2 != NULL) {
+                        i2c_slave_state.read_callback2(i2c_slave_state.position);
+                    }
+                    i2c_slave_state.position++;
+                } else {
+                    I2C1->DATAR = 0x00;
                 }
-                i2c_slave_state.position++;
             } else {
-                I2C1->DATAR = 0x00;
+                if (i2c_slave_state.position < i2c_slave_state.size1) {
+                    I2C1->DATAR = i2c_slave_state.registers1[i2c_slave_state.position];
+                    if (i2c_slave_state.read_callback1 != NULL) {
+                        i2c_slave_state.read_callback1(i2c_slave_state.position);
+                    }
+                    i2c_slave_state.position++;
+                } else {
+                    I2C1->DATAR = 0x00;
+                }
             }
         }
     }
 
     if (STAR1 & I2C_STAR1_STOPF) { // Stop event
         I2C1->CTLR1 &= ~(I2C_CTLR1_STOP); // Clear stop
-        if (i2c_slave_state.address2matched) {
-            if (i2c_slave_state.write_callback2 != NULL) {
-                i2c_slave_state.write_callback2(i2c_slave_state.offset, i2c_slave_state.position - i2c_slave_state.offset);
-            }
-        } else {
-            if (i2c_slave_state.write_callback1 != NULL) {
-                i2c_slave_state.write_callback1(i2c_slave_state.offset, i2c_slave_state.position - i2c_slave_state.offset);
+        if (i2c_slave_state.addressed1 || i2c_slave_state.addressed2) {
+            if (i2c_slave_state.address2matched) {
+                if (i2c_slave_state.write_callback2 != NULL) {
+                    i2c_slave_state.write_callback2(i2c_slave_state.offset, i2c_slave_state.position - i2c_slave_state.offset);
+                }
+            } else {
+                if (i2c_slave_state.write_callback1 != NULL) {
+                    i2c_slave_state.write_callback1(i2c_slave_state.offset, i2c_slave_state.position - i2c_slave_state.offset);
+                }
             }
         }
+        i2c_slave_state.addressed1 = false;
+        i2c_slave_state.addressed2 = false;
     }
 }
 
 void I2C1_ER_IRQHandler(void) __attribute__((interrupt));
 void I2C1_ER_IRQHandler(void) {
     uint16_t STAR1 = I2C1->STAR1;
+    uint8_t err = 0;
 
     if (STAR1 & I2C_STAR1_BERR) { // Bus error
         I2C1->STAR1 &= ~(I2C_STAR1_BERR); // Clear error
+        err++;
     }
 
     if (STAR1 & I2C_STAR1_ARLO) { // Arbitration lost error
         I2C1->STAR1 &= ~(I2C_STAR1_ARLO); // Clear error
+        err++;
     }
 
     if (STAR1 & I2C_STAR1_AF) { // Acknowledge failure
         I2C1->STAR1 &= ~(I2C_STAR1_AF); // Clear error
+        err++;
     }
+
+    if (err) {
+        I2C1->CTLR1 &= ~(I2C_CTLR1_STOP); // Clear stop
+    }        
 }
 
 #endif

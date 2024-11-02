@@ -11,7 +11,7 @@
 
 # Description
 
-At its core, its a synchronous finite state machine; it's not (directly) event-driven, because events are "buffered" into the synchronous tick/tock of the main loop. It more or less follows the [UML state machine](https://en.wikipedia.org/wiki/UML_state_machine). It's written in straight C.
+At its core, its a synchronous finite state machine; it's not (directly) event-driven, because events are "buffered" into the synchronous tock of the main loop. It more or less follows the [UML state machine](https://en.wikipedia.org/wiki/UML_state_machine). It's written in straight C.
 
 It uses the [ch32v003fun](https://github.com/cnlohr/ch32v003fun) "environment" to avoid the manufacturer's weighty HAL/EVT; the community around it has been very helpful. We also use PlatformIO to build the project.
 
@@ -29,16 +29,28 @@ The next most important concept is the "registry". Because this SAO is meant to 
 
 The MCU is the CH32V003F4U6 (QFN-20) chip, with 2 buttons, 16 WS2812s (in one channel) and five LEDs, two of which are wired special - see the hardware readme.
 
-## Tick/Tock
+When tested during supercon 2024, it was pulling high 30's to mid 40's ma.
 
-`SysClick` is used to create a synchronous 0.1ms "tick", and every 10 there's a "tock" (1ms). The main loop runs on the tocks. The tick is meant to provide PWM of the LEDs (unimplemented as of yet).
+## Tock
+
+`SysClick` is used to create a synchronous 1ms "tock". The main loop runs on the tocks.
 
 ## i2c Use
 @todo
 * I2C_ADDRESS 0x09
 
+## Libraries (/lib)
+* Color Utilities
+* i2c_slave
+  * Modified from example - thanks "true" to
+    * better handle errors, especially stop.
+    * Not call callbacks when i2c IDs don't match.
+    * Increase priority.
+* rand
+* ws2812b_dma_spi_led_driver
 
 ## TODO & Progress
+* recduce GPIO speeds
 * [Deprioritized] Fix Comet effect
 * [In progress] Finish & test i2c. Probably need a "dirty" reg entry - nope write callback can determine.
 * [Emit done, queue added, "listeners" unstarted] Things' (input) events.
@@ -65,7 +77,10 @@ The MCU is the CH32V003F4U6 (QFN-20) chip, with 2 buttons, 16 WS2812s (in one ch
 * To get a random binary: `rnd_fun(0, 1) & 0x01)`
 * To get a 0-255 randomly: `(uint8_t)rnd_fun(0, 1)`
 * It does not support `malloc`.
+* For best RISC performance, focus on 0's in loops/counters.
+* The i2c_slave/src/i2c_slave.h is modified from the fun example's version to clear stop condition on error, and increase IRQ priority.
+* Do not use `Delay_Ms()` as it is incompatible with 
 
 ## Thanks.
 Special thanks to cnlohr for the [ch32v003fun](https://github.com/cnlohr/ch32v003fun) project,
-and all the helpful people on his Discord server.
+and all the helpful people on his Discord server. And to "true" at the Hackaday Supercon 2024.
