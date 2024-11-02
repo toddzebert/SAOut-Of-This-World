@@ -8,13 +8,14 @@ const uint8_t button_gpio_pins[BUTTON_NUM] = { PC3, PC4 };
 // Timers and states for each of the buttons.
 Button_State_t button_state[BUTTON_NUM];
 
-Event_t buttonHandler_run(Event_t event);
+void buttonHandler_run(Event_t event);
 
-Event_t buttonHandler(Event_t event)
+void buttonHandler(Event_t event)
 {
     // printf( "In buttonHandler, event.type: %d\r\n", event.type ); // @debug
-    if (!(event.thing == THING_BUTTONS || event.thing == THING_ALL)) return Event_None;
-    
+    if (!(event.thing == THING_BUTTONS || event.thing == THING_ALL))
+        return;
+
     switch (event.type)
     {
         case EVENT_INIT:
@@ -34,20 +35,20 @@ Event_t buttonHandler(Event_t event)
                 state_action[THING_BUTTONS] = STATE_ACTION_ENTER;
                 thing_tock_timer[THING_BUTTONS] = DEBOUNCE_TIMER_BASE;
             }
-
-            return Event_None;
+            break;
 
         case EVENT_RUN:
-            return buttonHandler_run(event);
-
+            buttonHandler_run(event);
+            break;
+        
         default:
-            return Event_None;
+            break;
     }
 
-    return Event_None;
+    return;
 }
 
-Event_t buttonHandler_run(Event_t event)
+void buttonHandler_run(Event_t event)
 {
     for (int i = 0; i < BUTTON_NUM; i++)
     {
@@ -86,7 +87,7 @@ Event_t buttonHandler_run(Event_t event)
         }
 
         // External event that tells us what the button is doing.
-        Button_Event_Type_t press_event = BUTTON_NONE;
+        Button_Event_Type_t button_event_type = BUTTON_NONE;
 
         // Detect events for click/long/double.
         bool debounced_state = button_state[i].debounced_state;
@@ -106,7 +107,7 @@ Event_t buttonHandler_run(Event_t event)
                 button_state[i].hold_count++;
                 if (button_state[i].hold_count == LONG_PRESS_DELAY_COUNT)
                 {
-                    press_event = BUTTON_LONG_PRESSED;
+                    button_event_type = BUTTON_LONG_PRESSED;
                     //printf("BUTTON_SM_COUNT_LONG_PRESS -> BUTTON_SM_WAIT_FOR_STOP\n");
                     button_state[i].machine_state = BUTTON_SM_WAIT_FOR_STOP;
                 }
@@ -125,14 +126,14 @@ Event_t buttonHandler_run(Event_t event)
                 button_state[i].hold_count++;
                 if (button_state[i].hold_count == DOUBLE_PRESS_DELAY_COUNT)
                 {
-                    press_event = BUTTON_PRESSED;
+                    button_event_type = BUTTON_PRESSED;
                     //printf("BUTTON_SM_COUNT_DOUBLE_PRESS -> BUTTON_SM_WAIT_FOR_START\n");
                     button_state[i].machine_state = BUTTON_SM_WAIT_FOR_START;
                 }
             }
             else
             {
-                press_event = BUTTON_DOUBLE_PRESSED;
+                button_event_type = BUTTON_DOUBLE_PRESSED;
                 //printf("BUTTON_SM_COUNT_DOUBLE_PRESS -> BUTTON_SM_WAIT_FOR_STOP\n");
                 button_state[i].machine_state = BUTTON_SM_WAIT_FOR_STOP;
             }
@@ -146,31 +147,41 @@ Event_t buttonHandler_run(Event_t event)
             }
         }
 
-        // Print it out just for debug.
+        if (button_event_type == BUTTON_NONE)
+            continue;
+
+        Event_t Event_Button = {
+            .type = EVENT_BUTTON,
+            .thing = THING_ALL,
+            .data = {
+                .button = {
+                    .num = i,
+                    .type = button_event_type
+                }
+            }
+        };
+        if (!eventQueueFull())
+            eventPush(Event_Button);
+
+        /* Print it out just for debug.
+        printf("buttonHandler_run (%d): ", i);
+        switch (button_event_type)
         {
-            if (press_event == BUTTON_NONE)
-            {
-            }
-            else if (press_event == BUTTON_PRESSED)
-            {
-                printf("buttonHandler_run: Press event!\n");
-            }
-            else if (press_event == BUTTON_LONG_PRESSED)
-            {
-                printf("buttonHandler_run: Long press event!\n");
-            }
-            else if (press_event == BUTTON_DOUBLE_PRESSED)
-            {
-                printf("buttonHandler_run: Double press event!\n");
-            }
-            else
-            {
-                printf("buttonHandler_run: ERROR! Unhandled external event: %d\n", press_event);
-            }
-        }
+            case BUTTON_PRESSED:
+                printf("Press event!\n");
+                break;
+            case BUTTON_LONG_PRESSED:
+                printf("Long press event!\n");
+                break;
+            case BUTTON_DOUBLE_PRESSED:
+                printf("Double press event!\n");
+                break;
+            default:
+                printf("?\n");
+                break;
+        } // */
     }
 
     thing_tock_timer[THING_BUTTONS] = DEBOUNCE_TIMER_BASE;
-
-    return Event_None;
+    return;
 }

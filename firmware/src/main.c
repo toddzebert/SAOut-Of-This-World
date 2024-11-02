@@ -286,7 +286,7 @@ int main()
                 Event_t event = eventPop();
                 printf("In main loop event while - type, thing: %d %d\n", event.type, event.thing); // @debug
             
-                /*button_event =*/ buttonHandler(event);
+                buttonHandler(event);
                 ws_dirty = eyesHandler(event) || ws_dirty;
                 ws_dirty = starsHandler(event) || ws_dirty;
                 ws_dirty = upperTrimHandler(event) || ws_dirty;
@@ -296,12 +296,10 @@ int main()
             // Handle buttons.
             thing_tock_timer[THING_BUTTONS]--;
             if ( thing_tock_timer[THING_BUTTONS] == 0 ) {
-                // @todo disabled until the button pull-up and debounce are fixed.
                 // Also, perhaps this should go higher in the loop so the event can be processed
                 // as part of the existing global event handling conditional.
                 //printf("In main, thing_timer[THING_BUTTONS] == 0.\n");
-                /*button_event =*/ buttonHandler(Event_Run);
-                // @todo handle button_event.
+                buttonHandler(Event_Run);
             }
 
             // printf("in main loop\n"); // @debug

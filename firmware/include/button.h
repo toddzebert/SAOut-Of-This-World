@@ -36,6 +36,6 @@ typedef struct
 #define LONG_PRESS_DELAY_COUNT 1000  // After 500ms.
 #define DOUBLE_PRESS_DELAY_COUNT 250  // Within 250ms.
 
-Event_t buttonHandler(Event_t event);
+void buttonHandler(Event_t event);
 
 #endif /* BUTTON_H_ */
