@@ -37,6 +37,7 @@ When tested during supercon 2024, it was pulling high 30's to mid 40's ma.
 
 ## i2c Use
 @todo
+* I2C_ADDRESS 0x09
 
 ## Libraries (/lib)
 * Color Utilities
@@ -49,18 +50,19 @@ When tested during supercon 2024, it was pulling high 30's to mid 40's ma.
 * ws2812b_dma_spi_led_driver
 
 ## TODO & Progress
-
-* [It defies resolution] Fix "PA" GPIO pins
 * recduce GPIO speeds
 * [Deprioritized] Fix Comet effect
-* Finish & test i2c. Probably need a "dirty" reg entry.
-* [Done] Events base code
+* [In progress] Finish & test i2c. Probably need a "dirty" reg entry - nope write callback can determine.
 * [Emit done, queue added, "listeners" unstarted] Things' (input) events.
-* [having pull-up/debounce issues] Buttons
+* [In progress, having pull-up/debounce issues] Buttons
 * [Hold] Sense LEDs
 * Make LEDs PWM - int. convo https://discord.com/channels/@me/1170888366540197899/1301040627512770580 
 * Enhance and add Effects
 
+## Change Log
+
+* [Done] Events base code
+* [Fix, dev error] Fix "PA" GPIO pins
 
 ## Future ideas
 
