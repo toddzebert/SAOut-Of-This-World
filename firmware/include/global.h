@@ -61,10 +61,15 @@ typedef struct {
     uint8_t length;
 } Event_Reg_Change_Data_t;
 
+// These are the high level external press events.
+// Press is sent after double press timeout.
+// Double press is sent if keydown within N ms of keyup.
+// Long press is sent if still pressed after M ms of keydown.
+// States are reset after they are generated, e.g. no long press after keydown
+// of double press.
 typedef enum {
     BUTTON_NONE,
     BUTTON_PRESSED,
-    BUTTON_RELEASED,
     BUTTON_LONG_PRESSED,
     BUTTON_DOUBLE_PRESSED
 } __attribute__ ((__packed__)) Button_Event_Type_t;
