@@ -5,12 +5,12 @@
 | Port    | Usage      | Pin | Notes                    |
 |---------|------------|-----|--------------------------|
 | NRST    | GND        |  1  |                          |
-| PA1     | SenseLED1+ |  2  |                          |
-| PA2     | GLED3      |  3  |                          |
+| PA1     | SenseLED1+ |  2  | *A1                      |
+| PA2     | GLED3      |  3  | *A0                      |
 | VSS     | GND        |  4  |                          |
-| PD0     | GLED2      |  5  |                          |
+| PD0     | GLED2      |  5  | *Non-A                   |
 | VDD     | VCC        |  6  |                          |
-| PC0     | GLED1      |  7  |                          |
+| PC0     | GLED1      |  7  | *Non-A                   |
 | SDA     | SDA        |  8  | PC1                      |
 | SCL     | SCL        |  9  | PC2                      |
 | PC3     | Button1    | 10  | to GND, Pull-up          |
@@ -19,9 +19,9 @@
 | MOSI    | Neopixel   | 13  | PC6                      |
 | PC7     | SAO GPIO1  | 14  |                          |
 | SWIO    | SWIO       | 15  | PD1, Programer, exp. pad |
-| PD2     | SenseLED2- | 16  |                          |
-| PD3     | SenseLED2+ | 17  |                          |
-| PD4     | SenseLED1- | 18  |                          |
+| PD2     | SenseLED2- | 16  | *A3                      |
+| PD3     | SenseLED2+ | 17  | *A4                      |
+| PD4     | SenseLED1- | 18  | *A7                      |
 | UTX     | UTX        | 19  | PD5, USART, exposed pad  |
 | URX     | URX        | 20  | PD6, USART, exposed pad  |
 | VSS     | GND        | 21  |                          |
