@@ -50,6 +50,9 @@ volatile uint8_t timer_tick = 0;
 volatile uint8_t timer_tick_count = 0;
 volatile uint8_t timer_tock = 0;
 
+// @see https://github.com/cnlohr/ch32v003fun/wiki/Time .
+#define TICK_INERVAL Ticks_from_Us(100)
+
 // I2C.
 #define I2C_ADDRESS 0x09
 
@@ -135,12 +138,15 @@ void copyInRegReservedRO()
  * @todo Check protected "RO" registers and replace.
  */
 void onI2cWrite(uint8_t reg, uint8_t length) {
+    // return; // @debug note: exiting now oesn't help halt issue.
     // printf("onI2cWrite(%d, %d)\n", reg, length); // @debug
 
     // Check protected "RO" registers and replace with our settings.
     // @debug untested.
     if (reg < REG_RESERVED_RO_LENGTH) copyInRegReservedRO();
     // @todo issue reg event.
+
+    printf("onI2cWrite - reg, length: (%d, %d)\n", reg, length); // @debug
 
     Event_t reg_change_event = {
         .type = EVENT_REG_CHANGE,
@@ -149,7 +155,9 @@ void onI2cWrite(uint8_t reg, uint8_t length) {
         .data.reg_change.length = length
     };
 
-    eventPush(reg_change_event);
+    // @debug temp: eventPush(reg_change_event); // @debug note: removing this doesn't help halt issue.
+    // @todo reset systick with systick_init();
+    printf("leaving onI2cWrite\n"); // @debug **** SAO hangs temporarily between here and "in main event while loop" ****
 }
 
 
@@ -252,37 +260,62 @@ int main()
         .thing = THING_ALL
     };
 
-    systick_init();
+    printf("size of Event_t: %d\n", sizeof(Event_t)); // @debug
+
+    // @debug temp: systick_init();
 
     // Let things settle.
     Delay_Ms(200);
 
     printf("In main, right before loop.\n"); // @debug
 
+    uint32_t next_tick = SysTick->CNT + TICK_INERVAL;
+
     while(1)
     {
+        if ((int32_t)(SysTick->CNT - next_tick) > 0)
+        {
+            // @todo could and should we track "missed" ticks?
+            next_tick = SysTick->CNT + TICK_INERVAL;
+            timer_tick_count++; // 1's indexed.
+            timer_tick = 1;
+
+            if (timer_tick_count == 10)
+            {
+                timer_tick_count = 0;
+                timer_tock = 1;
+            }
+        }
+
         if (timer_tick)
         {
             timer_tick = 0;
 
             // @todo do what we want here. LEDs, maybe?
+            starsUpdate();
         }
 
         if (timer_tock)
         {
             timer_tock = 0;
 
+            int queue_event_debug = 0; // @debug
+
             // Use of this should be limited as its expensive.
             while (!eventQueueEmpty())
             {
-                // printf("in main event while loop.\n"); // @debug
+                printf("in main event while loop.\n"); // @debug
                 Event_t event = eventPop();
                 printf("In main loop event while - type, thing: %d %d\n", event.type, event.thing); // @debug
             
-                ws_dirty = eyesHandler(event) || ws_dirty;
-                ws_dirty = starsHandler(event) || ws_dirty;
-                ws_dirty = upperTrimHandler(event) || ws_dirty;
-                ws_dirty = lowerTrimHandler(event) || ws_dirty;
+                // @debug temp: ws_dirty = eyesHandler(event) || ws_dirty;
+                // @debug temp: ws_dirty = starsHandler(event) || ws_dirty;
+                // @debug temp: ws_dirty = upperTrimHandler(event) || ws_dirty;
+                // @debug temp: ws_dirty = lowerTrimHandler(event) || ws_dirty;
+            }
+
+            if (queue_event_debug) {
+                printf("In main loop, post event queue empty.\n"); // @debug
             }
 
             // Handle buttons.
@@ -328,7 +361,7 @@ int main()
 
             // Handle Stars (not a WS Thing).
             thing_tock_timer[THING_STARS]--;
-            if ( thing_tock_timer[THING_STARS] == 0 )
+            if (thing_tock_timer[THING_STARS] == 0)
             {
                 stars_dirty = starsHandler(Event_Run) || stars_dirty; // The || is unnecessary, but for the sake of consistency...
             }
@@ -336,7 +369,7 @@ int main()
             // This could be a part of the Stars handler, but for the sake of consistency, it's here.
             if (stars_dirty) {
                 stars_dirty = 0;
-                starsUpdate(); // @todo ?
+                // @todo temp: starsUpdate();
             }
         }
     }

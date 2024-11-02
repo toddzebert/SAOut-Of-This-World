@@ -39,10 +39,10 @@ const uint8_t reg_thing_led_start[THING_COUNT] = {
 const uint8_t RGB_Black[3] = {0, 0, 0};
 
 #define EVENT_QUEUE_SIZE 16
-Event_t Event_queue[EVENT_QUEUE_SIZE];
-uint8_t Event_Queue_head = EVENT_QUEUE_SIZE - 1;
-uint8_t Event_Queue_tail = EVENT_QUEUE_SIZE - 1;
-uint8_t Event_Queue_count = 0;
+volatile Event_t Event_queue[EVENT_QUEUE_SIZE];
+volatile uint8_t Event_Queue_head = EVENT_QUEUE_SIZE - 1;
+volatile uint8_t Event_Queue_tail = EVENT_QUEUE_SIZE - 1;
+volatile uint8_t Event_Queue_count = 0;
 
 /**
  * Checks if the event queue is empty.
@@ -81,6 +81,7 @@ bool eventPush(Event_t event) {
     // Wrap to top if needed.
     if (Event_Queue_head == 0) Event_Queue_head = EVENT_QUEUE_SIZE - 1;
 
+    printf("leaving eventPush\r\n"); // @debug
     return true;
 }
 
@@ -106,6 +107,8 @@ Event_t eventPop() {
     
     // Wrap to top if needed.
     if (Event_Queue_tail == EVENT_QUEUE_SIZE) Event_Queue_tail = 0;
+
+    printf( "Leaving eventPop, event.type %d, thing %d\r\n", event.type, event.thing ); // @debug
 
     return event;
 }

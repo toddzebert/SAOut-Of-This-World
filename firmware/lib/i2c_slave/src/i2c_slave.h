@@ -130,6 +130,11 @@ void SetSecondaryI2CSlaveReadOnly(bool read_only) {
 
 void I2C1_EV_IRQHandler(void) __attribute__((interrupt));
 void I2C1_EV_IRQHandler(void) {
+    // @debug below - didn't seem to help.
+    SysTick->CTLR &= ~(SYSTICK_CTLR_STE   |  // Disable Counter
+	                 SYSTICK_CTLR_STIE); // disable interrupts.
+    // @debug above
+ 
     uint16_t STAR1, STAR2 __attribute__((unused));
     STAR1 = I2C1->STAR1;
     STAR2 = I2C1->STAR2;
@@ -196,9 +201,13 @@ void I2C1_EV_IRQHandler(void) {
         } else {
             if (i2c_slave_state.write_callback1 != NULL) {
                 i2c_slave_state.write_callback1(i2c_slave_state.offset, i2c_slave_state.position - i2c_slave_state.offset);
+                // printf("in i2c_slave, post write_callback1\n"); // @debug
             }
+            // printf("in i2c_slave, post write_callback1, after if\n"); // @debug
         }
+        // printf("in i2c_slave, post write_callback1, after 2nd if\n"); // @debug
     }
+    printf("in i2c_slave, post write_callback1, after 3rd if, leaving function\n"); // @debug **** this happens.
 }
 
 void I2C1_ER_IRQHandler(void) __attribute__((interrupt));

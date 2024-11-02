@@ -8,6 +8,16 @@ uint8_t stars_effect;
 const uint8_t stars_gpio_h_pins[STARS_GPIO_H_PINS_NUM] = { PC0, PD0, PA2, PA1, PD3 };
 const uint8_t stars_gpio_l_pins[STARS_GPIO_H_PINS_NUM] = { PD4, PD2 };
 
+typedef struct {
+    uint8_t know_state;
+    uint8_t pwm_state;
+    uint8_t counter;
+    uint8_t threshold; // @todo may have to be uint16_t?
+
+} Stars_State_t;
+
+Stars_State_t Stars_PWM_State[STARS_GPIO_H_PINS_NUM];
+
 
 int starsHandler(Event_t event)
 {
@@ -50,6 +60,7 @@ int starsHandler(Event_t event)
 
 void starsUpdate()
 {
+    /* @debug old, but working binary
     for (int i = 0; i < STARS_GPIO_H_PINS_NUM; i++) {
         // We'll let the compiler optimize this away.
         // @todo or maybe use: !!registry[REG_STARS_LED_START + i]
@@ -61,5 +72,40 @@ void starsUpdate()
         {
             funDigitalWrite( stars_gpio_h_pins[i], FUN_LOW );
         }
-    }   
+    }
+    */
+    for (int i = 0; i < STARS_GPIO_H_PINS_NUM; i++)
+    {
+        if (registry[REG_STARS_LED_START + i] == 0)
+        {
+            if (Stars_PWM_State[i].pwm_state == 0) continue; // Nothing to do.
+            
+            // Must be new 0 state.
+            Stars_PWM_State[i].pwm_state = 0;
+            funDigitalWrite(stars_gpio_h_pins[i], FUN_LOW);
+        }
+        else
+        {
+            if (Stars_PWM_State[i].know_state == registry[REG_STARS_LED_START + i])
+            {
+                Stars_PWM_State[i].counter++;
+
+                if (Stars_PWM_State[i].counter >= Stars_PWM_State[i].threshold)
+                {
+                    Stars_PWM_State[i].counter = 0;
+                    Stars_PWM_State[i].pwm_state = !Stars_PWM_State[i].pwm_state;
+
+                    funDigitalWrite(stars_gpio_h_pins[i], Stars_PWM_State[i].pwm_state);
+                }
+            }
+            else
+            {
+                // Change of known state.
+                Stars_PWM_State[i].know_state = registry[REG_STARS_LED_START + i];
+                Stars_PWM_State[i].counter = 0;
+                Stars_PWM_State[i].pwm_state = 0;
+                Stars_PWM_State[i].threshold = Stars_PWM_State[i].know_state; // @todo THIS IS A SWAG!
+            }
+        }
+    }
 }

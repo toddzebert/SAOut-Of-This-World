@@ -9,7 +9,6 @@
 #define THING_COUNT 6
 
 // The UML State Actions.
-// @todo replace the enum (32bit) with a define mapped into a uint8_t.
 typedef enum {
     STATE_ACTION_INIT,
     STATE_ACTION_ENTER,
@@ -39,6 +38,8 @@ typedef enum {
     EVENT_NONE,
     EVENT_INIT,
     EVENT_RUN,
+    // @todo EVENT_RUN_TOCK ???
+    EVENT_RUN_TICK,
     EVENT_REG_CHANGE,
     EVENT_BUTTON,
     EVENT_SENSE,
