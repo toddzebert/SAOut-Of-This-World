@@ -56,6 +56,7 @@ When tested during supercon 2024, it was pulling high 30's to mid 40's ma.
 * [In progress] Finish & test i2c. Probably need a "dirty" reg entry - nope, write callback can determine.
 * [Emit done, queue added, "listeners" unstarted] Things' (input) events.
 * Enhance and add Effects
+* Review GH Issue.
 * [Deprioritized] Fix Comet effect
 * [Hold] Sense LEDs
 
