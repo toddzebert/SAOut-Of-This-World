@@ -44,6 +44,7 @@ The I2C (inter-IC) bus can transfer data at different speeds, including:
 */
 
 #include "main.h"
+// #include "softpwm.h"
 
 // Timers.
 volatile uint8_t timer_tock = 0;
@@ -83,7 +84,7 @@ void systick_init(void)
     
 	
 	// Enable the SysTick IRQ
-	NVIC_SetPriority(SysTicK_IRQn, 1 << 6);
+	NVIC_SetPriority(SysTicK_IRQn, 2 << 6);
     NVIC_EnableIRQ(SysTicK_IRQn);
 }
 
@@ -229,7 +230,6 @@ int main()
 
     // Prep for main loop.
     int ws_dirty = 0;
-    int stars_dirty = 0;
 
     // @note before this was const, .thing would get corrupted and Things' conditionals would fail,
     // leading to extreme slowness. Perhaps volatile may have worked?
@@ -246,6 +246,14 @@ int main()
     {
         if (timer_tock)
         {
+            /*
+            uint16_t timeout;
+            if (!timeout--) {
+                stars_pwm[0]++;
+                //stars_pwm[0] %= 64;
+                timeout = 10;
+            }
+            */
             timer_tock = 0;
 
             // Use of this should be limited as its expensive.
@@ -306,13 +314,8 @@ int main()
             thing_tock_timer[THING_STARS]--;
             if ( thing_tock_timer[THING_STARS] == 0 )
             {
-                stars_dirty = starsHandler(Event_Run) || stars_dirty; // The || is unnecessary, but for the sake of consistency...
-            }
-
-            // This could be a part of the Stars handler, but for the sake of consistency, it's here.
-            if (stars_dirty) {
-                stars_dirty = 0;
-                starsUpdate();
+                starsHandler(Event_Run);
+                // Stars updates are handled by the PWM ISR.
             }
         }
     }

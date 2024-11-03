@@ -90,7 +90,7 @@ void SetupI2CSlave(uint8_t address, volatile uint8_t* registers, uint8_t size, i
     I2C1->CTLR2 |= I2C_CTLR2_ITBUFEN | I2C_CTLR2_ITEVTEN | I2C_CTLR2_ITERREN;
 
     NVIC_EnableIRQ(I2C1_EV_IRQn); // Event interrupt
-    NVIC_SetPriority(I2C1_EV_IRQn, 0 << 6); // @note increase priority level, same as below.
+    NVIC_SetPriority(I2C1_EV_IRQn, 1 << 6); // @note increase priority level, same as below.
     NVIC_EnableIRQ(I2C1_ER_IRQn); // Error interrupt
     NVIC_SetPriority(I2C1_ER_IRQn, 3 << 6);
 

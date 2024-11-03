@@ -14,6 +14,7 @@ const uint8_t twinkle_defaults[5] = {
     8, // Twinkle_Frequency_default, out of 255
 };
 
+// 1 bit per Star.
 uint8_t Twinkle_state = 0;
 
 int effect_twinkle_run(Things_t thing, Event_t event);
@@ -56,7 +57,7 @@ int effect_twinkle_run(Things_t thing, Event_t event)
     for (int i = 0; i < STARS_GPIO_H_PINS_NUM; i++)
     {
         state = (Twinkle_state >> i) & 1;
-        r = (uint8_t) rnd_fun(0, 8);
+        r = (uint8_t) rnd_fun(0, 8);  // 0-255.
 
         // printf("i: %d, state: %d, r: %d\n", i, state, r); // @debug
 
@@ -66,7 +67,9 @@ int effect_twinkle_run(Things_t thing, Event_t event)
             state = !state;
             Twinkle_state ^= (1 << i);
             // Set reg LED.
-            registry[reg_thing_led_start[thing] + i] = state;
+            if (state == 0) registry[reg_thing_led_start[thing] + i] = 0;
+            else registry[reg_thing_led_start[thing] + i] = 63 + ((uint8_t) rnd_fun(0, 8) >> 1) + ((uint8_t) rnd_fun(0, 8) >> 2);
+
             // Set dirty.
             dirty = 1;
         }
