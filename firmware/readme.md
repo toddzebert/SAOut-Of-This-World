@@ -61,6 +61,7 @@ When tested during supercon 2024, it was pulling high 30's to mid 40's ma.
 
 ## Change Log
 
+* [Done] make Twinkle fade-in/fade-out.
 * [Done] Buttons
 * [Done] Events base code
 * [Done, dev error] Fix "PA" GPIO pins - thanks Discord
