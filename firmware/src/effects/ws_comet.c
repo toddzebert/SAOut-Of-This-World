@@ -60,15 +60,10 @@ int effect_ws_comet(Things_t thing, Event_t event)
 
             state_action[thing] = STATE_ACTION_ENTER;
             thing_tock_timer[thing] = 10; // Get this moving to Run soon.
-            // printNon0Reg(registry); // @debug
 
             return 0;
 
         case EVENT_RUN:
-            switch (registry[reg_thing_start[thing] + WS_Comet_Mode_offset])
-            {
-                // @todo
-            }
             return effect_ws_comet_run(thing, event);
 
         case EVENT_REG_CHANGE:
@@ -82,18 +77,18 @@ int effect_ws_comet(Things_t thing, Event_t event)
 int effect_ws_comet_run(Things_t thing, Event_t event)
 {
     // This stays inside so it's not static!
-    // @note Set to lower trim as it has the most and excess won't matter.
-    struct Alpha_Layer_LED_t alpha_layer_leds[LOWER_TRIM_COUNT] = {}; // Largest Thing size.
+    // @note Set to lower trim as it has the most LEDS and excess won't matter for upper.
+    struct Alpha_Layer_LED_t alpha_layer_leds[LOWER_TRIM_COUNT] = {};
 
     if (state_action[thing] == STATE_ACTION_ENTER)
     {
         // Set initial state.
-        WS_Comet_state[thing].position = thing_led_count[thing] >> 2; // Start at middle.
+        WS_Comet_state[thing].position = thing_led_count[thing] >> 1; // Start at middle.
         WS_Comet_state[thing].direction = rnd_fun(0, 1) & 0x01; // To get 0|1.
         WS_Comet_state[thing].status = 0;
         // printf("WS *init* comet state: thing %d, pos %d, dir %d, status %d\n", thing, WS_Comet_state[thing].position, WS_Comet_state[thing].direction, WS_Comet_state[thing].status); // @debug
 
-        // Apply background color.
+        // Apply background color to registry LEDs.
         for (int i = 0; i < thing_led_count[thing]; i++)
         {
             for (int j = 0; j < 3; j++)

@@ -36,10 +36,18 @@ const uint8_t reg_reserved_ro[REG_RESERVED_RO_LENGTH] = {
 };
 
 
+/**
+ * @brief Initializes the SysTick counter to fire once per millisecond.
+ *
+ * Resets any pre-existing configuration, sets the compare register to trigger
+ * once per millisecond, resets the Count Register, sets the SysTick
+ * configuration, and enables the SysTick IRQ.
+ *
+ * @note This is a modified version of the example
+ *       <https://github.com/cnlohr/ch32v003fun/blob/master/examples/systick_irq/systick_irq.c>.
+ */
 void systick_init(void)
 {
-    // See https://github.com/cnlohr/ch32v003fun/blob/master/examples/systick_irq/systick_irq.c,
-    // but modified.
 	// Reset any pre-existing configuration
 	SysTick->CTLR = 0x0000;
 	
@@ -63,8 +71,17 @@ void systick_init(void)
     NVIC_EnableIRQ(SysTicK_IRQn);
 }
 
-// Tocks are 1ms.
+
 void SysTick_Handler(void) __attribute__((interrupt));
+/**
+ * @brief Interrupt Service Routine for SysTick timer.
+ *
+ * This function handles the SysTick interrupt, which occurs every 1ms. 
+ * It sets the `timer_tock` flag to indicate the timer tick has occurred
+ * and clears the SysTick status register to reset the interrupt trigger state.
+ * 
+ * Tocks are 1ms.
+ */
 void SysTick_Handler(void)
 {
     timer_tock = 1;
@@ -132,13 +149,21 @@ void onI2cRead(uint8_t reg) {
 }
 
 
+/**
+ * @brief Initializes the I2C slave interface.
+ *
+ * Initializes the I2C slave interface pins (SDA and SCL) and sets up the I2C slave
+ * using the i2c_slave library. The I2C address is set to I2C_ADDRESS, the registry
+ * is set to the registry array of length sizeof(registry), and the onI2cWrite and
+ * onI2cRead callback functions are set.
+ *
+ * @note This function is intended to be called once, at initialization time.
+ */
 void init_i2c() {
     // i2c_slave.
     funPinMode(PC1, GPIO_CFGLR_OUT_2Mhz_AF_OD); // SDA // @debug was GPIO_CFGLR_OUT_10Mhz_AF_OD.
     funPinMode(PC2, GPIO_CFGLR_OUT_2Mhz_AF_OD); // SCL // @debug was GPIO_CFGLR_OUT_10Mhz_AF_OD.
 
-    // Address, registers, registers length, onWrite callback, onRead callback, read only.
-    // > The I2C1 peripheral can also listen on a secondary address. [see Readme]
     SetupI2CSlave(I2C_ADDRESS, registry, sizeof(registry), onI2cWrite, onI2cRead, false);
 }
 
@@ -172,12 +197,12 @@ int main()
     AFIO->PCFR1 &= ~AFIO_PCFR1_PA12_REMAP;
 
     // Init "things".
-    // @todo All the things inits should be done more dynamically.
     const Event_t Event_Init = {
         .type = EVENT_INIT,
         .thing = THING_ALL
     };
 
+     // @todo All the things inits should be done more dynamically.
     buttonHandler(Event_Init);
     eyesHandler(Event_Init);
     starsHandler(Event_Init);
@@ -194,6 +219,8 @@ int main()
         .type = EVENT_RUN,
         .thing = THING_ALL
     };
+
+    printf("in main, size of Event_t: %d\n", sizeof(Event_t)); // @debug
 
     systick_init();
 
@@ -212,7 +239,8 @@ int main()
                 Event_t event = eventPop();
                 printf("In main loop event while - type, thing: %d %d\n", event.type, event.thing); // @debug
             
-                buttonHandler(event);
+                buttonHandler(event); // @todo can we think of a reason for this?
+
                 ws_dirty = eyesHandler(event) || ws_dirty;
                 ws_dirty = starsHandler(event) || ws_dirty;
                 ws_dirty = upperTrimHandler(event) || ws_dirty;
@@ -222,20 +250,15 @@ int main()
             // Handle buttons.
             thing_tock_timer[THING_BUTTONS]--;
             if ( thing_tock_timer[THING_BUTTONS] == 0 ) {
-                // Also, perhaps this should go higher in the loop so the event can be processed
+                // @todo Also, perhaps this should go higher in the loop so the event can be processed
                 // as part of the existing global event handling conditional.
-                //printf("In main, thing_timer[THING_BUTTONS] == 0.\n");
                 buttonHandler(Event_Run);
             }
-
-            // printf("in main loop\n"); // @debug
 
             // Handle Eyes.
             thing_tock_timer[THING_EYES]--;
             if ( thing_tock_timer[THING_EYES] == 0 )
             {
-                // printf("In main, thing_timer[THING_EYES] == 0.\n"); // @debug
-                // printf("event.type %d, event.thing: %d\r\n", event_run.type, event_run.thing);
                 ws_dirty = eyesHandler(Event_Run) || ws_dirty;
             }
 
@@ -264,7 +287,7 @@ int main()
             if ( thing_tock_timer[THING_STARS] == 0 )
             {
                 starsHandler(Event_Run);
-                // Stars updates are handled by the PWM ISR.
+                // @note Stars updates (like dirty state) are handled by the PWM ISR.
             }
         }
     }

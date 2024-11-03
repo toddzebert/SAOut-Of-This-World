@@ -42,18 +42,18 @@ int starsHandler(Event_t event)
         RCC->APB1PCENR |= RCC_APB1Periph_TIM2;
         
         // SMCFGR: default clk input is CK_INT
-        // set TIM2 clock prescaler divider 
+        // Set TIM2 clock prescaler divider. 
         TIM2->PSC = 0x0000;
-        // set PWM total cycle width
+        // Set PWM total cycle width.
         TIM2->ATRLR = 2400 - 1;
         TIM2->CNT = 0;
 
-        // enable interrupt
+        // Enable interrupt.
         TIM2->DMAINTENR |= TIM_UIE;
         NVIC_SetPriority(TIM2_IRQn, 0 << 6);
         NVIC_EnableIRQ(TIM2_IRQn);
 
-        // Enable TIM2
+        // Enable TIM2.
         TIM2->CTLR1 |= TIM_CEN;
 
         // These are the Sense (star) LEDs, low side.
@@ -93,7 +93,9 @@ __attribute__((interrupt)) void TIM2_IRQHandler(void)
     if (!idx) idx = PWM_COUNT;
 
     for (i = 0; i < STARS_COUNT; i++) {
+        // @note this reduces PWM range to 0-63 to keep it performant.
         g = gamma8[registry[REG_STARS_LED_START + i]] >> 2;
+
         if (idx == PWM_COUNT) {
             Stars_Pin_info[i].gpio->BCR = Stars_Pin_info[i].pin;
         }
