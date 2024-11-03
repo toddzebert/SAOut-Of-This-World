@@ -39,10 +39,10 @@ const uint8_t reg_thing_led_start[THING_COUNT] = {
 const uint8_t RGB_Black[3] = {0, 0, 0};
 
 #define EVENT_QUEUE_SIZE 16
-Event_t Event_queue[EVENT_QUEUE_SIZE];
-uint8_t Event_Queue_head = EVENT_QUEUE_SIZE - 1;
-uint8_t Event_Queue_tail = EVENT_QUEUE_SIZE - 1;
-uint8_t Event_Queue_count = 0;
+volatile Event_t Event_queue[EVENT_QUEUE_SIZE];
+volatile uint8_t Event_Queue_head = EVENT_QUEUE_SIZE - 1;
+volatile uint8_t Event_Queue_tail = EVENT_QUEUE_SIZE - 1;
+volatile uint8_t Event_Queue_count = 0;
 
 /**
  * Checks if the event queue is empty.

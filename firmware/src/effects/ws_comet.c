@@ -210,7 +210,7 @@ int effect_ws_comet_run(Things_t thing, Event_t event)
             }
 
             // Check for existing alpha for this position.
-            if (alpha_layer_leds[curr_body_x_pos].alpha && 0) // @debug disabling this for now...
+            if (alpha_layer_leds[curr_body_x_pos].alpha && 0) // @debug disabling this for now...  See Rotate for alpha implementation.
             {
                 // @debug ****** still broken as of 9/27 14:30 *******
                 // Get existing alpha.
