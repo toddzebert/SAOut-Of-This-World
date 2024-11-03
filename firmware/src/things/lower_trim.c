@@ -11,9 +11,12 @@ int lowerTrimHandler(Event_t event)
     if (!lower_trim_effect) lower_trim_effect = EFFECT_WS_ROTATE;
 
     // Respond to presses from button 1 (the right one).
-    if (event.type == EVENT_BUTTON &&
+    if
+    (
+        event.type == EVENT_BUTTON &&
         event.data.button.num == 1 &&
-        event.data.button.type == BUTTON_PRESSED)
+        event.data.button.type == BUTTON_PRESSED
+    )
     {
         // Rotate through the effects.
         uint8_t next_trim_effect = lower_trim_effect;

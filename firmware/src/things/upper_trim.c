@@ -11,9 +11,12 @@ int upperTrimHandler(Event_t event)
     if (!upper_trim_effect) upper_trim_effect = EFFECT_WS_ROTATE; // @debug
 
     // Respond to presses from button 0 (the left one).
-    if (event.type == EVENT_BUTTON &&
+    if
+    (
+        event.type == EVENT_BUTTON &&
         event.data.button.num == 0 &&
-        event.data.button.type == BUTTON_PRESSED)
+        event.data.button.type == BUTTON_PRESSED
+    )
     {
         // Rotate through the effects.
         uint8_t next_trim_effect = upper_trim_effect;
