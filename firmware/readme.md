@@ -65,7 +65,7 @@ When tested during supercon 2024, it was pulling high 30's to mid 40's ma.
 * [Done] Events base code
 * [Done, dev error] Fix "PA" GPIO pins
 * [Done] reduce GPIO speeds
-* Make LEDs (soft) PWM
+* [Done] Make LEDs (soft) PWM
   
 ## Future ideas
 
