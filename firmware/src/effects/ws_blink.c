@@ -97,8 +97,6 @@ int blinkAlternate(Things_t thing, Event_t event);
  */
 int effect_ws_blink(Things_t thing, Event_t event)
 {   
-    // printf("In effect_ws_blink, thing: %d, event.type: %d\r\n", thing, event.type); // @debug
-
     switch (event.type)
     {
     case EVENT_INIT:
@@ -108,13 +106,10 @@ int effect_ws_blink(Things_t thing, Event_t event)
 
         state_action[thing] = STATE_ACTION_ENTER;
         thing_tock_timer[thing] = 10; // Get this moving to Run soon.
-        // printNon0Reg(registry); // @debug
 
         return 0;
 
     case EVENT_RUN:
-        // printf("In effect_ws_blink_run, thing: %d, event.type: %d\r\n", thing, event.type); // @debug
-
         switch (registry[reg_thing_start[thing] + Blink_Mode_offset])
         {
         case Blink_Random:
@@ -157,8 +152,6 @@ int effect_ws_blink(Things_t thing, Event_t event)
  */
 int blinkRandom(Things_t thing, Event_t event)
 {
-    // printf("In blinkRandom, thing: %d, event.type: %d\r\n", thing, event.type); // @debug
-
     uint8_t r; // For random.
     int dirty = 0;
 
@@ -254,11 +247,8 @@ int blinkAlternate(Things_t thing, Event_t event)
 {
     int dirty = 0;
 
-    // printf("In blinkAlternate, thing: %d, event.type: %d, state_action: %d\r\n", thing, event.type, state_action[thing]); // @debug
-
     if (state_action[thing] == STATE_ACTION_ENTER)
     {
-        // printf("In blinkAlternate, STATE_ACTION_ENTER.\r\n"); // @debug
         // Set "raw" reg LED (Left only, see state below) settings from defaults. Assumes Things Eyes.
         regToRegCopy(registry, REG_EYES_LED_START, registry, REG_EYES_START + Blink_LEDs_offset, (Blink_LEDs_offset_length / 2) * sizeof(uint8_t));
         // @todo should I set right eye to black?
@@ -274,10 +264,8 @@ int blinkAlternate(Things_t thing, Event_t event)
         return 1; // Dirty.
     }
 
-    // printf("In blinkAlternate, STATE_ACTION_GO+.\r\n"); // @debug
     // Assume STATE_ACTION_GO...
     if (Blink_state[thing].alternate.mini_timer == 0) {
-        // printf("Timer done.\r\n"); // @debug
         // Decrement eye blink status, and wrap around if necessary.
         Blink_state[thing].alternate.left_blink = (Blink_state[thing].alternate.left_blink == 0) ? 3 : Blink_state[thing].alternate.left_blink - 1;
 
@@ -296,9 +284,7 @@ int blinkAlternate(Things_t thing, Event_t event)
 
     // Left eye. If it's opening or closing...
     if (Blink_state[thing].alternate.left_blink & 1) {
-        // printf("In blinkAlternate, left_blink & 1.\r\n"); // @debug
         hexa = registry[REG_EYES_START + Blink_Left_offset] << 16 | registry[REG_EYES_START + Blink_Left_offset + 1] << 8 | registry[REG_EYES_START + Blink_Left_offset + 2];
-        // printf("In blinkAlternate, left_blink, hexa: %ld.\r\n", hexa); // @debug
         // Use 2nd lsb to determine direction of fade for alpha.
         if ((Blink_state[thing].alternate.left_blink >> 1) & 1)
         {
@@ -310,11 +296,9 @@ int blinkAlternate(Things_t thing, Event_t event)
             // b01, blink opening.
             alpha = blink_alternate_alpha[Blink_state[thing].alternate.mini_timer];
         }
-        // printf("In blinkAlternate, left_blink, alpha: %d.\r\n", alpha); // @debug
         
         // Alpha applies to hexa.
         hex_color = TweenHexColors(0, hexa, alpha);
-        // printf("In blinkAlternate, left_blink, hex_color: %ld.\r\n", hex_color); // @debug
 
         r = (hex_color >> 16) & 0xFF;
         g = (hex_color >> 8) & 0xFF;
@@ -329,9 +313,7 @@ int blinkAlternate(Things_t thing, Event_t event)
 
     // Right eye.
     if (Blink_state[thing].alternate.right_blink & 1) {
-        // printf("In blinkAlternate, right_blink & 1.\r\n"); // @debug
         hexa = registry[REG_EYES_START + Blink_Right_offset] << 16 | registry[REG_EYES_START + Blink_Right_offset + 1] << 8 | registry[REG_EYES_START + Blink_Right_offset + 2];
-        // printf("In blinkAlternate, right_blink, hexa: %ld.\r\n", hexa); // @debug
         // Use 2nd lsb to determine direction of fade for alpha.
         if ((Blink_state[thing].alternate.right_blink >> 1) & 1)
         {

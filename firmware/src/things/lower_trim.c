@@ -17,6 +17,7 @@ int lowerTrimHandler(Event_t event)
     {
         // Rotate through the effects.
         uint8_t next_trim_effect = lower_trim_effect;
+
         switch (lower_trim_effect)
         {
             case EFFECT_RAW:
@@ -32,30 +33,33 @@ int lowerTrimHandler(Event_t event)
                 next_trim_effect = EFFECT_WS_ROTATE;
                 break;
         }
+
         registry[reg_thing_start[THING_LOWER_TRIM]] = next_trim_effect;
+
         Event_t Lower_Trim_Reinit = {
             .type = EVENT_INIT,
             .thing = THING_LOWER_TRIM
         };
+
         eventPush(Lower_Trim_Reinit);
-        //printf("lower_trim.c: Changed to %d effect\n", next_trim_effect);
+
         return 0;
     }
 
     switch (lower_trim_effect)
     {
-    case EFFECT_RAW:
-        return effect_raw(THING_LOWER_TRIM, event);
+        case EFFECT_RAW:
+            return effect_raw(THING_LOWER_TRIM, event);
 
-    case EFFECT_WS_COMET:
-        return effect_ws_comet(THING_LOWER_TRIM, event);
+        case EFFECT_WS_COMET:
+            return effect_ws_comet(THING_LOWER_TRIM, event);
 
-    case EFFECT_WS_ROTATE:
-        return effect_ws_rotate(THING_LOWER_TRIM, event);
-    
-    default:
-        // @todo what to do if given invalid effect?
-        break;
+        case EFFECT_WS_ROTATE:
+            return effect_ws_rotate(THING_LOWER_TRIM, event);
+        
+        default:
+            // @todo what to do if given invalid effect?
+            break;
     }
 
     return 0;

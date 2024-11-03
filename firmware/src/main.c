@@ -5,33 +5,9 @@
 
 /*
     From ws2812b_dma_spi_led_driver.h:
-        For the CH32V003 this means output will be on PORTC Pin 6 (MOSI)
         void DMA1_Channel3_IRQHandler( void );
 
-    From i2c_slave.h:
-        SDA and SCL [PC1 and PC2].
-    
-    Programming:
-        PD1 is SWIO.
-    
-    Timer interrupt:
-        TIM1C1 uses PD2.
-
-    Button
-        PC3 - TBD
-        PC4 - TBD
-
-    GLEDs:
-        PC0
-        PD0
-        PA2
-
-    Sense LEDs:
-        PA1 (+), PD4 (-)
-        PD3 (+), PD2 (-)
-    
-    For UART printf, on:
-		CH32V003, Port PD5 (UTX, plus PD6/URX), 115200 8n1
+    Timer1 is used for Stars PWM.
 */
 
 /*
@@ -44,7 +20,6 @@ The I2C (inter-IC) bus can transfer data at different speeds, including:
 */
 
 #include "main.h"
-// #include "softpwm.h"
 
 // Timers.
 volatile uint8_t timer_tock = 0;
@@ -58,13 +33,13 @@ volatile uint8_t timer_tock = 0;
 const uint8_t reg_reserved_ro[REG_RESERVED_RO_LENGTH] = {
     0, // API Major version,
     3, // API Minor version
-    // @todo more?
 };
 
 
 void systick_init(void)
 {
-    // See https://github.com/cnlohr/ch32v003fun/blob/master/examples/systick_irq/systick_irq.c .
+    // See https://github.com/cnlohr/ch32v003fun/blob/master/examples/systick_irq/systick_irq.c,
+    // but modified.
 	// Reset any pre-existing configuration
 	SysTick->CTLR = 0x0000;
 	
@@ -88,7 +63,7 @@ void systick_init(void)
     NVIC_EnableIRQ(SysTicK_IRQn);
 }
 
-// Ticks are 10ths of a millisecond. Tocks are 1ms.
+// Tocks are 1ms.
 void SysTick_Handler(void) __attribute__((interrupt));
 void SysTick_Handler(void)
 {
@@ -156,7 +131,7 @@ void onI2cRead(uint8_t reg) {
     // @todo ?
 }
 
-// @debug This is never called directly?
+
 void init_i2c() {
     // i2c_slave.
     funPinMode(PC1, GPIO_CFGLR_OUT_2Mhz_AF_OD); // SDA // @debug was GPIO_CFGLR_OUT_10Mhz_AF_OD.
@@ -184,16 +159,6 @@ int main()
 {
 	SystemInit();
 
-    // @debug testing this.
-    // AFIO->PCFR1 &= ~AFIO_PCFR1_PA12_REMAP;
-    // see https://discord.com/channels/665433554787893289/1080242396736000100/1301911065231097876 .
-
-    // Due to a lack of pullup resistors on the board, if it's not plugged into
-    // an SAO port with pullups then it's possible for noise to confuse the I2C
-    // inputs into thinking that a transmission has started, and that has the
-    // effect of basically causing the badge to hang.
-    // Comment out this line temporarily if you're developing/debugging without
-    // being connected to an SAO port.
     init_i2c();
 
     copyInRegReservedRO();
@@ -201,13 +166,10 @@ int main()
     copyInRegReservedGlobal();
 
     funGpioInitAll();
-    // @debug testing this.  See above.
+    // @debug testing this.  From PA's issue.... probably no longer needed.
     RCC->APB2PCENR |= RCC_AFIOEN;
     //Delay_Ms(1);
     AFIO->PCFR1 &= ~AFIO_PCFR1_PA12_REMAP;
-
-    // Init button1. @debug its broken since moving to fun*() usage.
-    // @debug temp: button1Init();
 
     // Init "things".
     // @todo All the things inits should be done more dynamically.
@@ -222,17 +184,12 @@ int main()
     upperTrimHandler(Event_Init);
     lowerTrimHandler(Event_Init);
 
-    // @todo disabled until the button pull-up and debounce are fixed.
-    // buttonHandler(event_init);
-
     // WS2812 init and initial "start" to render. Must go after all "things" inits, ...Handler(1)'s.
     WS2812_Init();
 
     // Prep for main loop.
     int ws_dirty = 0;
 
-    // @note before this was const, .thing would get corrupted and Things' conditionals would fail,
-    // leading to extreme slowness. Perhaps volatile may have worked?
     const Event_t Event_Run = {
         .type = EVENT_RUN,
         .thing = THING_ALL
@@ -246,14 +203,6 @@ int main()
     {
         if (timer_tock)
         {
-            /*
-            uint16_t timeout;
-            if (!timeout--) {
-                stars_pwm[0]++;
-                //stars_pwm[0] %= 64;
-                timeout = 10;
-            }
-            */
             timer_tock = 0;
 
             // Use of this should be limited as its expensive.

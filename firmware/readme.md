@@ -27,7 +27,9 @@ While both Things and Effects maintain there own UML "action" state (ENTER, GO, 
 
 The next most important concept is the "registry". Because this SAO is meant to be an i2c target, all the settings and outputs are stored in the registry. The i2c library modifies the registry directly when it receives a write. Things and Effects depend on both reading and writing to the registry. Any i2c controller can switch Effect "modes", settings, or even control the LEDs and WS2812s directly using the "Raw" Effect.
 
-The MCU is the CH32V003F4U6 (QFN-20) chip, with 2 buttons, 16 WS2812s (in one channel) and five LEDs, two of which are wired special - see the hardware readme.
+For Stars, the 8bit value is passed through a gamma map table, then its reduced to 6 bits for the LED soft PWM.
+
+The MCU is the CH32V003F4U6 (QFN-20) chip, with 2 buttons, 16 WS2812s (in one channel) and five (soft PWM)LEDs, two of which are wired special - see the hardware readme.
 
 When tested during supercon 2024, it was pulling high 30's to mid 40's ma.
 
@@ -42,7 +44,7 @@ When tested during supercon 2024, it was pulling high 30's to mid 40's ma.
 ## Libraries (/lib)
 * Color Utilities
 * i2c_slave
-  * Modified from example - thanks "true" to
+  * Modified from example - thanks [true] - to:
     * better handle errors, especially stop.
     * Not call callbacks when i2c IDs don't match.
     * Increase priority.
@@ -50,20 +52,21 @@ When tested during supercon 2024, it was pulling high 30's to mid 40's ma.
 * ws2812b_dma_spi_led_driver
 
 ## TODO & Progress
-* recduce GPIO speeds
-* [Deprioritized] Fix Comet effect
-* [In progress] Finish & test i2c. Probably need a "dirty" reg entry - nope write callback can determine.
+
+* [In progress] Finish & test i2c. Probably need a "dirty" reg entry - nope, write callback can determine.
 * [Emit done, queue added, "listeners" unstarted] Things' (input) events.
-* [In progress, having pull-up/debounce issues] Buttons
-* [Hold] Sense LEDs
-* Make LEDs PWM - int. convo https://discord.com/channels/@me/1170888366540197899/1301040627512770580 
 * Enhance and add Effects
+* [Deprioritized] Fix Comet effect
+* [Hold] Sense LEDs
 
 ## Change Log
 
+* [Done] Buttons
 * [Done] Events base code
-* [Fix, dev error] Fix "PA" GPIO pins
-
+* [Done, dev error] Fix "PA" GPIO pins
+* [Done] reduce GPIO speeds
+* Make LEDs (soft) PWM
+  
 ## Future ideas
 
 * The mismatch of the length of `enum Things_t` and arrays such as `reg_thing_start[]` could be an issue in the future.
@@ -83,4 +86,4 @@ When tested during supercon 2024, it was pulling high 30's to mid 40's ma.
 
 ## Thanks.
 Special thanks to cnlohr for the [ch32v003fun](https://github.com/cnlohr/ch32v003fun) project,
-and all the helpful people on his Discord server. And to "true" at the Hackaday Supercon 2024.
+and all the helpful people on his Discord server. And to [true] at the Hackaday Supercon 2024.

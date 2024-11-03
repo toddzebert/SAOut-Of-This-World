@@ -50,16 +50,10 @@ int effect_twinkle_run(Things_t thing, Event_t event)
     uint8_t dirty = 0;
     uint8_t r; // For random.
 
-    // @todo probably not needed. if (state_action[thing] == STATE_ACTION_ENTER) {}
-
-    // printf("In effect_run_twinkle, thing is: %u, flag is: %d\r\n", thing, flag); // @debug = 1 for Stars, from Things_t in global.h.
-
     for (int i = 0; i < STARS_GPIO_H_PINS_NUM; i++)
     {
         state = (Twinkle_state >> i) & 1;
         r = (uint8_t) rnd_fun(0, 8);  // 0-255.
-
-        // printf("i: %d, state: %d, r: %d\n", i, state, r); // @debug
 
         if (r < registry[reg_thing_start[thing] + Twinkle_Frequency_offset])
         {

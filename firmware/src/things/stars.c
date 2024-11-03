@@ -2,8 +2,8 @@
 
 #include <ch32v003fun.h>
 
-#define PWM_BIT_DEPTH       6
-#define PWM_COUNT           (1 << PWM_BIT_DEPTH)
+#define PWM_BIT_DEPTH 6
+#define PWM_COUNT (1 << PWM_BIT_DEPTH)
 
 uint8_t stars_effect;
 
@@ -28,7 +28,6 @@ static int8_t idx = 0;
 
 int starsHandler(Event_t event)
 {
-    // printf("starsHandler\n"); // @debug
     if (!(event.thing == THING_STARS || event.thing == THING_ALL)) return 0;
 
     if (event.type == EVENT_INIT)
@@ -36,7 +35,7 @@ int starsHandler(Event_t event)
         // Configure the GPIOs for soft PWM, all high side.
         for (uint8_t i = 0; i < STARS_COUNT; i++) {
             Stars_Pin_info[i].gpio->CFGLR &= ~(0xf << (4 * Stars_Pin_info[i].idx));
-            Stars_Pin_info[i].gpio->CFGLR |=  (0x2 << (4 * Stars_Pin_info[i].idx));   // 2MHz push pull
+            Stars_Pin_info[i].gpio->CFGLR |=  (0x2 << (4 * Stars_Pin_info[i].idx)); // 2MHz push pull
         }
 
         // Enable GPIOD and TIM2
@@ -70,15 +69,15 @@ int starsHandler(Event_t event)
 
     switch (stars_effect)
     {
-    case EFFECT_RAW:
-        return effect_raw(THING_STARS, event);
+        case EFFECT_RAW:
+            return effect_raw(THING_STARS, event);
 
-    case EFFECT_TWINKLE:
-        return effect_twinkle(THING_STARS, event);
-    
-    default:
-        // @todo what to do if given invalid effect?
-        break;
+        case EFFECT_TWINKLE:
+            return effect_twinkle(THING_STARS, event);
+        
+        default:
+            // @todo what to do if given invalid effect?
+            break;
     }
 
     return 0;
@@ -90,11 +89,11 @@ __attribute__((interrupt)) void TIM2_IRQHandler(void)
     uint8_t g;
     
     idx--;
+
     if (!idx) idx = PWM_COUNT;
 
     for (i = 0; i < STARS_COUNT; i++) {
-        g = gamma8[registry[REG_STARS_LED_START + i]] >> 2; // was stars_pwm[i]
-        //g = (stars_pwm[i] >> 2);
+        g = gamma8[registry[REG_STARS_LED_START + i]] >> 2;
         if (idx == PWM_COUNT) {
             Stars_Pin_info[i].gpio->BCR = Stars_Pin_info[i].pin;
         }
