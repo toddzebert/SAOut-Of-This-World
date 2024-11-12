@@ -12,5 +12,9 @@ Besides being out of this world in design and fairly LED-y, it works as an i2c t
 
 The left button sequences between "Effects" for the Upper Trim (the 5 WS2812's in the middle), while the right button sequences between Effects for the Lower Trim (WS2812's at the bottom).
 
+Todo's
+" Create hackaday.io project 
+" see firmware readme
+
 ![SAOut Of This World Front Preview](hardware/SAOutOfThisWorld_Board_Front_Preview.png)
 ![SAOut Of This World Back Preview](hardware/SAOutOfThisWorld_Board_Back_Preview.png)
