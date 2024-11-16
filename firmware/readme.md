@@ -54,18 +54,19 @@ When tested during supercon 2024, it was pulling high 30's to mid 40's ma.
 ## TODO & Progress
 
 * [In progress] Finish & test i2c. Probably need a "dirty" reg entry - nope, write callback can determine.
-* [Emit done, queue added, "listeners" unstarted] Things' (input) events.
+* [Emit done, queue added, thing "listeners" some done] Things' (input) events and actions.
 * Enhance and add Effects
+* [Re-imagined] brightness control.
 * Review GH Issue.
-* [Deprioritized] Fix Comet effect
 * [Hold] Sense LEDs
 
 ## Change Log
 
+* [Done] Fix Comet effect
 * [Done] make Twinkle fade-in/fade-out.
 * [Done] Buttons
 * [Done] Events base code
-* [Done, dev error] Fix "PA" GPIO pins - thanks Discord
+* [Done] Fix "PA" GPIO pins - thanks Discord
 * [Done] reduce GPIO speeds
 * [Done] fix i2c crashing - thanks[true]
 * [Done] Make LEDs (soft) PWM - thanks [true]

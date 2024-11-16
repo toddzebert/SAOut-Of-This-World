@@ -264,10 +264,10 @@ u_int32_t blendHexColorsWithAlpha(uint8_t br, uint8_t bg, uint8_t bb, uint8_t fr
     uint32_t b = (bb + (FastMultiply(fb, 255 - fa) + 128)) >> 8;
     */
 
-    // @debug
-    uint32_t r = (br + ((FastMultiply(fr, 255 - fa) + 128) >> 8)) & 0xff;
-    uint32_t g = (bg + ((FastMultiply(fg, 255 - fa) + 128) >> 8)) & 0xff;
-    uint32_t b = (bb + ((FastMultiply(fb, 255 - fa) + 128) >> 8)) & 0xff;
+    // @debug all were 255 - fa
+    uint32_t r = (br + ((FastMultiply(fr, fa) + 128) >> 8)) & 0xff;
+    uint32_t g = (bg + ((FastMultiply(fg, fa) + 128) >> 8)) & 0xff;
+    uint32_t b = (bb + ((FastMultiply(fb, fa) + 128) >> 8)) & 0xff;
 
     // printf("blendHexColorsWithAlpha: %lu %lu %lu\n", r, g, b); // @debug
     
