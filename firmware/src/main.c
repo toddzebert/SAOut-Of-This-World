@@ -3,6 +3,8 @@
  *
 */
 
+#include <rand.h> // @debug
+
 /*
     From ws2812b_dma_spi_led_driver.h:
         void DMA1_Channel3_IRQHandler( void );
@@ -220,7 +222,11 @@ int main()
         .thing = THING_ALL
     };
 
-    printf("in main, size of Event_t: %d\n", sizeof(Event_t)); // @debug
+    Delay_Ms(500); // @debug
+
+    // printf("in main, size of Event_t: %d\n", sizeof(Event_t)); // @debug
+
+    // for (int i = 0; i < 10; i++) printf("rand 0|1: %d\n", rnd_fun(0, 1) & 0x01); // @debug
 
     systick_init();
 

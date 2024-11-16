@@ -94,6 +94,7 @@ typedef struct {
 } Event_t;
 
 extern const Event_t Event_None;
+// @note size of Event_t: 4B.
  
 extern bool eventQueueEmpty();
 

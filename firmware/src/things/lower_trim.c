@@ -23,11 +23,8 @@ int lowerTrimHandler(Event_t event)
 
         switch (lower_trim_effect)
         {
-            case EFFECT_RAW:
-                next_trim_effect = EFFECT_WS_ROTATE;
-                break;
             case EFFECT_WS_COMET:
-                next_trim_effect = EFFECT_RAW;
+                next_trim_effect = EFFECT_WS_ROTATE;
                 break;
             case EFFECT_WS_ROTATE:
                 next_trim_effect = EFFECT_WS_COMET;
