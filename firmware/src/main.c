@@ -37,6 +37,17 @@ const uint8_t reg_reserved_ro[REG_RESERVED_RO_LENGTH] = {
     3, // API Minor version
 };
 
+struct {
+    uint8_t Brightness_mode: 1;
+} Global_state = {
+    .Brightness_mode = 0
+};
+
+#define BRIGHTNESS_MODE_DISABLED 0
+#define BRIGHTNESS_MODE_ENABLED 1
+
+#define GLOBAL_RETURN_NONE 0
+#define GLOBAL_RETURN_STOP_PROP 1
 
 /**
  * @brief Initializes the SysTick counter to fire once per millisecond.
@@ -169,6 +180,79 @@ void init_i2c() {
     SetupI2CSlave(I2C_ADDRESS, registry, sizeof(registry), onI2cWrite, onI2cRead, false);
 }
 
+
+/**
+ * @brief The global event handler.
+ *
+ * This function is responsible for handling Global events that are not specific to
+ * a specific Things. If the event is a button press, it will handle it if the global
+ * brightness mode is enabled. If the brightness mode is disabled, it will
+ * ignore the event.
+ *
+ * @param[in] event The event to handle.
+ * @return The return value is one of the GLOBAL_RETURN_* constants. If
+ * GLOBAL_RETURN_STOP_PROP is returned, the event will not be propagated to
+ * other handlers. If GLOBAL_RETURN_NONE is returned, the event will be
+ * propagated to other handlers.
+ */
+int globalHandler(Event_t event)
+{
+    switch (event.type)
+    {
+        case EVENT_BUTTON:
+            if (event.data.button.type == BUTTON_LONG_PRESSED)
+            {
+                // Check if correct button.
+                if (
+                    Global_state.Brightness_mode == BRIGHTNESS_MODE_ENABLED
+                    && event.data.button.num == 1
+                ) return GLOBAL_RETURN_STOP_PROP;
+                else
+                {
+                    if (Global_state.Brightness_mode == BRIGHTNESS_MODE_ENABLED)
+                    {
+                        Global_state.Brightness_mode = BRIGHTNESS_MODE_DISABLED;
+                        return GLOBAL_RETURN_NONE;
+                    }
+                    else
+                    {
+                        Global_state.Brightness_mode = BRIGHTNESS_MODE_ENABLED;
+                        return GLOBAL_RETURN_STOP_PROP;
+                    }
+                    
+                }
+            }
+            else if (event.data.button.type == BUTTON_PRESSED)
+            {
+                if (Global_state.Brightness_mode == BRIGHTNESS_MODE_DISABLED)
+                    return GLOBAL_RETURN_NONE;
+
+                // OK, time to change brightness.
+                if (event.data.button.num == BUTTON_LEFT)
+                {
+                    if (registry[REG_GLOBAL_BRIGHTNESS] > 0)
+                        registry[REG_GLOBAL_BRIGHTNESS]--;
+
+                    return GLOBAL_RETURN_STOP_PROP;
+                }
+                else if (event.data.button.num == BUTTON_RIGHT)
+                {
+                    if (registry[REG_GLOBAL_BRIGHTNESS] < 8)
+                        registry[REG_GLOBAL_BRIGHTNESS]++;
+
+                    return GLOBAL_RETURN_STOP_PROP;
+                }
+            }
+            
+            break;
+
+        default:
+            break;
+    }
+
+    return GLOBAL_RETURN_NONE;
+}
+
 /**
  * @brief Main entry point.
  * 
@@ -244,7 +328,10 @@ int main()
                 // printf("in main event while loop.\n"); // @debug
                 Event_t event = eventPop();
                 printf("In main loop event while - type, thing: %d %d\n", event.type, event.thing); // @debug
-            
+
+                // Global gets priority, and return here is not dirty, but a return state.
+                if (globalHandler(event) == GLOBAL_RETURN_STOP_PROP) continue;
+
                 buttonHandler(event); // @todo can we think of a reason for this?
 
                 ws_dirty = eyesHandler(event) || ws_dirty;

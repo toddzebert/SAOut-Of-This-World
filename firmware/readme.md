@@ -56,12 +56,13 @@ When tested during supercon 2024, it was pulling high 30's to mid 40's ma.
 * [In progress] Finish & test i2c. Probably need a "dirty" reg entry - nope, write callback can determine.
 * [Emit done, queue added, thing "listeners" some done] Things' (input) events and actions.
 * Enhance and add Effects
-* [Re-imagined] brightness control.
+* [Researching...] Global "mode" visual indications, perhaps eyes?
 * Review GH Issue.
 * [Hold] Sense LEDs
 
 ## Change Log
 
+* [Done] brightness control.
 * [Done] Fix Comet effect
 * [Done] make Twinkle fade-in/fade-out.
 * [Done] Buttons

@@ -61,29 +61,29 @@ void buttonHandler_run(Event_t event)
         {
             // We see the button is pressed, stop any released counting.
             button_state[i].release_count = 0;
+
             if (button_state[i].press_count < 255)
                 button_state[i].press_count++;
             // If we have been pressed for N consecutive cycles and the
             // debounced state isn't true, then we flip the state.
-            if (button_state[i].press_count >= DEBOUNCE_DELAY_COUNT &&
-                !button_state[i].debounced_state)
-            {
-                button_state[i].debounced_state = true;
-            }
+            if (
+                button_state[i].press_count >= DEBOUNCE_DELAY_COUNT &&
+                !button_state[i].debounced_state
+            ) button_state[i].debounced_state = true;
         }
         else
         {
             // We see the button is not pressed, stop any pressed counting.
             button_state[i].press_count = 0;
+
             if (button_state[i].release_count < 255)
                 button_state[i].release_count++;
             // If we have been released for N consecutive cycles and the
             // debounced state is true, then we flip the state.
-            if (button_state[i].release_count >= DEBOUNCE_DELAY_COUNT &&
-                    button_state[i].debounced_state)
-            {
-                button_state[i].debounced_state = false;
-            }
+            if (
+                button_state[i].release_count >= DEBOUNCE_DELAY_COUNT &&
+                button_state[i].debounced_state
+            ) button_state[i].debounced_state = false;
         }
 
         // External event that tells us what the button is doing.
@@ -91,6 +91,7 @@ void buttonHandler_run(Event_t event)
 
         // Detect events for click/long/double.
         bool debounced_state = button_state[i].debounced_state;
+        
         if (button_state[i].machine_state == BUTTON_SM_WAIT_FOR_START)
         {
             if (debounced_state)
@@ -100,11 +101,13 @@ void buttonHandler_run(Event_t event)
                 button_state[i].machine_state = BUTTON_SM_COUNT_LONG_PRESS;
             }
         }
+
         if (button_state[i].machine_state == BUTTON_SM_COUNT_LONG_PRESS)
         {
             if (debounced_state)
             {
                 button_state[i].hold_count++;
+
                 if (button_state[i].hold_count == LONG_PRESS_DELAY_COUNT)
                 {
                     button_event_type = BUTTON_LONG_PRESSED;
@@ -119,11 +122,13 @@ void buttonHandler_run(Event_t event)
                 button_state[i].machine_state = BUTTON_SM_COUNT_DOUBLE_PRESS;
             }
         }
+
         if (button_state[i].machine_state == BUTTON_SM_COUNT_DOUBLE_PRESS)
         {
             if (!debounced_state)
             {
                 button_state[i].hold_count++;
+
                 if (button_state[i].hold_count == DOUBLE_PRESS_DELAY_COUNT)
                 {
                     button_event_type = BUTTON_PRESSED;
@@ -138,6 +143,7 @@ void buttonHandler_run(Event_t event)
                 button_state[i].machine_state = BUTTON_SM_WAIT_FOR_STOP;
             }
         }
+
         if (button_state[i].machine_state == BUTTON_SM_WAIT_FOR_STOP)
         {
             if (!debounced_state)
@@ -160,6 +166,7 @@ void buttonHandler_run(Event_t event)
                 }
             }
         };
+
         if (!eventQueueFull())
             eventPush(Event_Button);
 
