@@ -74,6 +74,9 @@ typedef enum {
     BUTTON_DOUBLE_PRESSED
 } __attribute__ ((__packed__)) Button_Event_Type_t;
 
+#define BUTTON_LEFT 0
+#define BUTTON_RIGHT 1
+
 typedef struct {
     uint8_t num;
     Button_Event_Type_t type;
@@ -171,11 +174,15 @@ void regToRegCopy(volatile uint8_t *dest, size_t dest_offset, volatile uint8_t *
 // Misc functions.
 uint8_t byteIsPowerOfTwo(uint8_t x);
 
-// Color functions.
+// Color/brightness functions. //
 // see also color_utilities.h
 u_int32_t blendHexColorsWithAlpha(uint8_t br, uint8_t bg, uint8_t bb, uint8_t fr, uint8_t fg, uint8_t fb, uint8_t fa);
 
-// Debug functions.
+uint8_t brightnessControl(uint8_t subject);
+
+#define REG_GLOBAL_BRIGHTNESS 19
+
+// Debug functions. //
 
 // Ex: printNon0Reg(registry);
 void printNon0Reg(volatile uint8_t *reg);

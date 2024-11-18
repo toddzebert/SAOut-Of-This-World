@@ -274,6 +274,45 @@ u_int32_t blendHexColorsWithAlpha(uint8_t br, uint8_t bg, uint8_t bb, uint8_t fr
     return (r << 16) | (g << 8) | b;
 }
 
+// @todo
+uint8_t brightnessControl(uint8_t subject)
+{
+    switch (registry[REG_GLOBAL_BRIGHTNESS])
+    {
+        // @todo do these need + 1 or more?
+        // Most likely cases first.
+        case 8:
+            return subject;
+
+        case 0:
+            return 0;
+
+        case 1:
+            return subject >> 3; // 12.5%
+
+        case 2:
+            return (subject >> 2); // 25%
+
+        case 3:
+            return (subject >> 2) + (subject >> 3) + 1; // 37.5%
+
+        case 4: // @todo
+            return subject >> 1; // 50%
+
+        case 5:
+            return (subject >> 1) + (subject >> 2) + 1; // 62.5%
+
+        case 6:
+            return (subject >> 1) + (subject >> 2) + 1; // 75%
+
+        case 7:
+            return (subject >> 1) + (subject >> 2) + 1; // 87.5%
+
+        default:
+            return subject;
+    }
+}
+
 /**
  * @brief Print out non-zero values in the registry.
  *

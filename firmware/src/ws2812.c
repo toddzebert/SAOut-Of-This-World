@@ -16,7 +16,8 @@ WS2812B:
 */
 
 // @todo find source....
-const uint8_t gamma8[]  = {
+const uint8_t gamma8[] =
+{
     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  1,  1,  1, // 16+
     1,  1,  1,  1,  1,  1,  1,  1,  1,  2,  2,  2,  2,  2,  2,  2, // 32+
@@ -32,13 +33,15 @@ const uint8_t gamma8[]  = {
   115,117,119,120,122,124,126,127,129,131,133,135,137,138,140,142,
   144,146,148,150,152,154,156,158,160,162,164,167,169,171,173,175,
   177,180,182,184,186,189,191,193,196,198,200,203,205,208,210,213,
-  215,218,220,223,225,228,231,233,236,239,241,244,247,249,252,255 };
+  215,218,220,223,225,228,231,233,236,239,241,244,247,249,252,255
+  };
 
-// @note [move this comment] green is brightest, followed closely by red, then a distant blue.
+// @note green is brightest, followed closely by red, then a distant blue.
 const uint8_t reg_reserved_ws[] = {
     1, // gamma adjust, default 1
     1, // blue compensation, default 1
-    0, // red compensation, default 0 
+    0, // red compensation, default 0
+    8, // brightness, default 7, 0 ... 8. // @todo should this be in a diff routine? 
 };
 
 #define REG_DEFAULTS_START 16
@@ -75,6 +78,8 @@ void WS2812_Init()
  * 
  * This function is called to get the color data for a specified LED
  * number. The color format is in 0xRRGGBB.
+ * 
+ * It's called as part of an ISR.
  *
  * @param ledno The index of the LED for which to retrieve the color.
  * @return The color value of the LED as a 32-bit integer.
@@ -110,6 +115,11 @@ uint32_t CalcWSLed(int ledno)
     r = registry[index];
     g = registry[index + 1];
     b = registry[index + 2];
+    
+    // Brightness.
+    r = brightnessControl(r);
+    g = brightnessControl(g);
+    b = brightnessControl(b);
 
     if (registry[REG_BLUE_COMPENSATION] == 1) {
         // Let's reduce them without needing FP.

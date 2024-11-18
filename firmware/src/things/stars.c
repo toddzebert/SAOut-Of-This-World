@@ -12,7 +12,8 @@ struct {
     uint16_t pin;
     uint8_t idx;
     uint8_t fun_port;
-} const Stars_Pin_info[STARS_COUNT] = {
+} const Stars_Pin_info[STARS_COUNT] =
+{
     {GPIOC, GPIO_Pin_0, 0, PC0},
     {GPIOD, GPIO_Pin_0, 0, PD0},
     {GPIOA, GPIO_Pin_2, 2, PA2},
@@ -21,7 +22,7 @@ struct {
 };
 
 // PD2 is also analog.
-const uint8_t stars_gpio_l_pins[STARS_GPIO_H_PINS_NUM] = { PD4, PD2 };
+const uint8_t stars_gpio_l_pins[STARS_GPIO_H_PINS_NUM] = {PD4, PD2};
 
 // For the ISR.
 static int8_t idx = 0;
@@ -33,7 +34,8 @@ int starsHandler(Event_t event)
     if (event.type == EVENT_INIT)
     {
         // Configure the GPIOs for soft PWM, all high side.
-        for (uint8_t i = 0; i < STARS_COUNT; i++) {
+        for (uint8_t i = 0; i < STARS_COUNT; i++)
+        {
             Stars_Pin_info[i].gpio->CFGLR &= ~(0xf << (4 * Stars_Pin_info[i].idx));
             Stars_Pin_info[i].gpio->CFGLR |=  (0x2 << (4 * Stars_Pin_info[i].idx)); // 2MHz push pull
         }
@@ -50,7 +52,7 @@ int starsHandler(Event_t event)
 
         // Enable interrupt.
         TIM2->DMAINTENR |= TIM_UIE;
-        NVIC_SetPriority(TIM2_IRQn, 0 << 6);
+        NVIC_SetPriority(TIM2_IRQn, 0 << 6); // @todo meaning?
         NVIC_EnableIRQ(TIM2_IRQn);
 
         // Enable TIM2.
@@ -64,6 +66,7 @@ int starsHandler(Event_t event)
         }
     }
     
+    // Get the stars effect, or default to twinkle.
     int stars_effect = registry[reg_thing_start[THING_STARS]];
     if (!stars_effect) stars_effect = EFFECT_TWINKLE;
 
@@ -83,7 +86,8 @@ int starsHandler(Event_t event)
     return 0;
 }
 
-__attribute__((interrupt)) void TIM2_IRQHandler(void)
+void TIM2_IRQHandler(void) __attribute__((interrupt));
+void TIM2_IRQHandler(void)
 {
     int8_t i;
     uint8_t g;
@@ -92,19 +96,21 @@ __attribute__((interrupt)) void TIM2_IRQHandler(void)
 
     if (!idx) idx = PWM_COUNT;
 
-    for (i = 0; i < STARS_COUNT; i++) {
-        // @note this reduces PWM range to 0-63 to keep it performant.
-        g = gamma8[registry[REG_STARS_LED_START + i]] >> 2;
+    for (i = 0; i < STARS_COUNT; i++)
+    {
+        // Get the PWM value, do brightness, and then LSR by 2 to reduces PWM range to 0-63 to keep it performant.
+        g = registry[REG_STARS_LED_START + i];
+        g = brightnessControl(g);
+        g = gamma8[g] >> 2;
 
-        if (idx == PWM_COUNT) {
-            Stars_Pin_info[i].gpio->BCR = Stars_Pin_info[i].pin;
-        }
-        if (idx == g) {
-            Stars_Pin_info[i].gpio->BSHR = Stars_Pin_info[i].pin;            
-        }
+        if (idx == PWM_COUNT)
+            Stars_Pin_info[i].gpio->BCR = Stars_Pin_info[i].pin; // BCR = Port bit reset.
+
+        if (idx == g)
+            Stars_Pin_info[i].gpio->BSHR = Stars_Pin_info[i].pin; // BSHR = Port bit set/reset register.
     }
 
-    TIM2->INTFR &= ~TIM_UIF;
+    TIM2->INTFR &= ~TIM_UIF; // Update interrupt flag.
 }
 
 
