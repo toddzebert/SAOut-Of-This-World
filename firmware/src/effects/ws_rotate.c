@@ -40,6 +40,7 @@ const uint8_t ws_rotate_defaults[] = {
     128, // Frequency_default = 32; // @debug
 };
 
+// Low and High nibbles.
 typedef struct 
 {
     // Yes, it's reversed.
@@ -50,8 +51,8 @@ typedef struct
 typedef union
 {
     // This is an ugly way of doing it, but it works.
-    uint8_t raw; // to force data in from reg.
-    WS_Rotate_Mode_Data_t data;
+    uint8_t raw; // To force data in from reg.
+    WS_Rotate_Mode_Data_t data; // To get structured data out.
 } WS_Rotate_Mode_t;
 
 // This is just direction, for now?
@@ -114,7 +115,6 @@ int effect_ws_rotate_run(Things_t thing, Event_t event)
 
     if (state_action[thing] == STATE_ACTION_ENTER)
     {
-        // @todo set any state here.
         WS_Rotate_state[thing] = mode.data.ln; // Just direction.
         // Randomize direction?
         if (WS_Rotate_state[thing] == 2) WS_Rotate_state[thing] = rnd_fun(0, 1) & 0x01; // To get 0|1.

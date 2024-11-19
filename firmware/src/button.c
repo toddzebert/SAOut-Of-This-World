@@ -167,7 +167,7 @@ void buttonHandler_run(Event_t event)
             }
         };
 
-        if (!eventQueueFull())
+        if (!eventQueueFull()) // @todo this conditional unnecessary - see eventPush().
             eventPush(Event_Button);
 
         /* Print it out just for debug.

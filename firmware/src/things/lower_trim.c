@@ -7,6 +7,7 @@ int lowerTrimHandler(Event_t event)
     // printf("lowerTrimHandler\n"); // @debug
     if (!(event.thing == THING_LOWER_TRIM || event.thing == THING_ALL)) return 0;
 
+    // Get or set default effect.
     lower_trim_effect = registry[reg_thing_start[THING_LOWER_TRIM]];
     if (!lower_trim_effect) lower_trim_effect = EFFECT_WS_ROTATE;
 
