@@ -200,11 +200,13 @@ int globalHandler(Event_t event)
     switch (event.type)
     {
         case EVENT_BUTTON:
+            // First handle long press.
             if (event.data.button.type == BUTTON_LONG_PRESSED)
             {
-                // Check if correct button.
-                if (event.data.button.num == 1)
+                // Check which button.
+                if (event.data.button.num == BUTTON_RIGHT)
                 {
+                    // Silce if in mode, otherwise pass.
                     if (Global_state.Brightness_mode == BRIGHTNESS_MODE_ENABLED)
                         return GLOBAL_RETURN_STOP_PROP;
                     else
@@ -212,19 +214,52 @@ int globalHandler(Event_t event)
                 }
                 else
                 {
+                    // Must be left button.
                     if (Global_state.Brightness_mode == BRIGHTNESS_MODE_ENABLED)
                     {
+                        // Disable brightness mode.
                         Global_state.Brightness_mode = BRIGHTNESS_MODE_DISABLED;
-                        return GLOBAL_RETURN_NONE;
+
+                        Event_t Event_global = {
+                            .type = EVENT_GLOBAL,
+                            .thing = THING_ALL,
+                            .data = {
+                                .global = {
+                                    .mode = GLOBAL_MODE_BRIGHTNESS,
+                                    .state = 0
+                                }
+                            }
+                        };
+
+                        eventPush(Event_global);
+                        
+                        // Even though mode is disabled, eat the button that caused it.
+                        return GLOBAL_RETURN_STOP_PROP;
                     }
                     else
                     {
+                        // Enable brightness mode.
                         Global_state.Brightness_mode = BRIGHTNESS_MODE_ENABLED;
+
+                        Event_t Event_global = {
+                            .type = EVENT_GLOBAL,
+                            .thing = THING_ALL,
+                            .data = {
+                                .global = {
+                                    .mode = GLOBAL_MODE_BRIGHTNESS,
+                                    .state = 1
+                                }
+                            }
+                        };
+
+                        eventPush(Event_global);
+
                         return GLOBAL_RETURN_STOP_PROP;
                     }
                     
                 }
             }
+            // Now handle regular presses.
             else if (event.data.button.type == BUTTON_PRESSED)
             {
                 if (Global_state.Brightness_mode == BRIGHTNESS_MODE_DISABLED)
