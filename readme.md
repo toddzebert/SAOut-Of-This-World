@@ -16,7 +16,7 @@ Besides being out of this world in design and fairly LED-y, it works as an i2c t
 
 The left button sequences between "Effects" for the Upper Trim (the 5 WS2812's in the middle), while the right button sequences between Effects for the Lower Trim (WS2812's at the bottom).
 
-A long press on the left button will enter "brightness control mode" - there is no current visable indication of such. Subsequent regular (short) button presses on left or right, will decrease or increase, respectively, brightness. Use a left long press to return to normal mode.
+A long press on the left button will enter "brightness control mode" - the left eye will go into a rapid red flashing to indicate such. Subsequent regular (short) button presses on left or right, will decrease or increase, respectively, brightness. Use a left long press to return to normal mode.
 
 ## Todo's
 
