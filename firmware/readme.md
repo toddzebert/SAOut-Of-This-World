@@ -69,7 +69,7 @@ When tested during supercon 2024, it was pulling high 30's to mid 40's ma.
 * [Done] Events base code
 * [Done] Fix "PA" GPIO pins - thanks Discord
 * [Done] reduce GPIO speeds
-* [Done] fix i2c crashing - thanks[true]
+* [Done] fix i2c crashing - thanks [true]
 * [Done] Make LEDs (soft) PWM - thanks [true]
   
 ## Future ideas
