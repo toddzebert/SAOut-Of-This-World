@@ -42,8 +42,14 @@ typedef enum {
     EVENT_REG_CHANGE,
     EVENT_BUTTON,
     EVENT_SENSE,
-    EVENT_GPIO
+    EVENT_GPIO,
+    EVENT_GLOBAL
 } __attribute__ ((__packed__)) Event_Type_t;
+
+typedef enum {
+    GLOBAL_MODE_NONE,
+    GLOBAL_MODE_BRIGHTNESS
+} __attribute__ ((__packed__)) Global_Mode_t;
 
 // @debug probably unneeded.
 typedef struct {
@@ -54,6 +60,11 @@ typedef struct {
 typedef struct {
     uint16_t data; // placeholder
 } Event_Run_Data_t;
+
+typedef struct {
+    Global_Mode_t mode;
+    uint8_t state; // 1 = on, 0 = off, more? possible enum?
+} Event_Global_Data_t;
 
 // See onI2cWrite().
 typedef struct {
@@ -87,6 +98,7 @@ typedef union {
     // Event_Run_Data_t run; // not needed...?
     Event_Reg_Change_Data_t reg_change;
     Event_Button_Data_t button;
+    Event_Global_Data_t global;
     // @todo the rest...
 } Event_Data_t;
 
@@ -152,6 +164,10 @@ extern const uint8_t RGB_Black[3];
 #define REG_LOWER_TRIM_END 139
 #define REG_LOWER_TRIM_COUNT (REG_LOWER_TRIM_END - REG_LOWER_TRIM_START + 1)
 #define REG_LOWER_TRIM_LED_START 113
+
+#define RED_OFFSET 0
+#define GREEN_OFFSET 1
+#define BLUE_OFFSET 2
 
 extern const uint8_t reg_thing_start[THING_COUNT];
 
