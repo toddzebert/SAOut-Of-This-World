@@ -203,10 +203,13 @@ int globalHandler(Event_t event)
             if (event.data.button.type == BUTTON_LONG_PRESSED)
             {
                 // Check if correct button.
-                if (
-                    Global_state.Brightness_mode == BRIGHTNESS_MODE_ENABLED
-                    && event.data.button.num == 1
-                ) return GLOBAL_RETURN_STOP_PROP;
+                if (event.data.button.num == 1)
+                {
+                    if (Global_state.Brightness_mode == BRIGHTNESS_MODE_ENABLED)
+                        return GLOBAL_RETURN_STOP_PROP;
+                    else
+                        return GLOBAL_RETURN_NONE;
+                }
                 else
                 {
                     if (Global_state.Brightness_mode == BRIGHTNESS_MODE_ENABLED)
